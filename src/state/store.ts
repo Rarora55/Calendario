@@ -17,6 +17,9 @@ type AppState = {
 
     //Events
     addEvent: (e: CalendarEvent) => void;
+    updateEvent: (id: string, patch: Partial<CalendarEvent>) => void;
+    deleteEvent: (id: string) => void;
+    getEventById: (id: string) => CalendarEvent | undefined;
 
     //Selectors/Helpers
     getVisibleCalendars: () => Set<string>;
@@ -73,6 +76,30 @@ export const useAppStore = create<AppState>((set, get) => ({
             events: next,
         });
 
+    },
+
+    updateEvent: (id, patch) => {
+        const next = get().events.map((event) =>
+            event.id === id ? { ...event, ...patch } : event
+        );
+        set({ events: next });
+        void saveState({
+            calendars: get().calendars,
+            events: next,
+        });
+    },
+
+    deleteEvent: (id) => {
+        const next = get().events.filter((event) => event.id !== id);
+        set({ events: next });
+        void saveState({
+            calendars: get().calendars,
+            events: next,
+        });
+    },
+
+    getEventById: (id) => {
+        return get().events.find((event) => event.id === id);
     },
 
     getVisibleCalendars: () => {

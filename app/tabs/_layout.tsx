@@ -50,13 +50,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="bin"
         options={{
-          title: 'Calendarios',
-          tabBarIcon: ({ color }) => <TabBarIcon name="cog" color={color} />,
+          title: 'Bin',
+          tabBarIcon: ({ color }) => <TabBarIcon name="trash" color={color} />,
         }}
       />
     </Tabs>
   );
 }
-
