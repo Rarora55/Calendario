@@ -69,7 +69,10 @@ export default function EventCard({
         <Text style={{ fontWeight: "700", color: textColor, flex: 1 }}>{title}</Text>
         {onActionPress ? (
           <Pressable
-            onPress={onActionPress}
+            onPress={(event) => {
+              event.stopPropagation();
+              onActionPress();
+            }}
             style={{
               paddingHorizontal: 10,
               paddingVertical: 4,

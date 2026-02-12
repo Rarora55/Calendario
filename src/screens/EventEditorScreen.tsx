@@ -1,6 +1,7 @@
 import { useAppStore } from "@/src/state/store";
+import type { EventPriority } from "@/src/domain/Event";
 import { useTheme } from "@react-navigation/native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
 
@@ -21,6 +22,11 @@ const monthLabels = [
 ];
 
 const colorOptions = ["#111827", "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6"];
+const priorityOptions: { value: EventPriority; label: string }[] = [
+    { value: "baja", label: "Baja" },
+    { value: "media", label: "Media" },
+    { value: "alta", label: "Alta" },
+];
 
 type CalendarPickerProps = {
     label: string;
@@ -154,16 +160,28 @@ function id() {
     return Math.random().toString(36).slice(2, 10);
 }
 
+function safeDate(iso: string | undefined, fallback: Date) {
+    const parsed = iso ? new Date(iso) : fallback;
+    return Number.isNaN(parsed.getTime()) ? fallback : parsed;
+}
+
 export default function EventEditorScreen() {
     const { colors } = useTheme();
+    const { id: rawId } = useLocalSearchParams<{ id?: string | string[] }>();
+    const eventId = Array.isArray(rawId) ? rawId[0] : rawId;
     const hydrated = useAppStore((s) => s.hydrated);
     const hydrate = useAppStore((s) => s.hydrate);
     const addEvent = useAppStore((s) => s.addEvent);
+    const updateEvent = useAppStore((s) => s.updateEvent);
+    const existingEvent = useAppStore((s) => (eventId ? s.getEventById(eventId) : undefined));
     const calendars = useAppStore((s) => s.calendars);
+    const isEditMode = Boolean(eventId);
 
     const [title, setTitle] = useState("");
+    const [label, setLabel] = useState("");
     const [description, setDescription] = useState("");
     const [location, setLocation] = useState("");
+    const [priority, setPriority] = useState<EventPriority>("media");
     const [allDay, setAllDay] = useState(false);
     const [color, setColor] = useState("");
     const [startDate, setStartDate] = useState(() => new Date());
@@ -173,7 +191,21 @@ export default function EventEditorScreen() {
         if (!hydrated) void hydrate();
     }, [hydrated, hydrate]);
 
+    useEffect(() => {
+        if (!hydrated || !eventId || !existingEvent) return;
+        setTitle(existingEvent.title ?? "");
+        setLabel(existingEvent.label ?? "");
+        setDescription(existingEvent.description ?? "");
+        setLocation(existingEvent.location ?? "");
+        setPriority(existingEvent.priority ?? "media");
+        setAllDay(Boolean(existingEvent.allDay));
+        setColor(existingEvent.color ?? "");
+        setStartDate(safeDate(existingEvent.startISO, new Date()));
+        setEndDate(safeDate(existingEvent.endISO, new Date(Date.now() + 60 * 60 * 1000)));
+    }, [hydrated, eventId, existingEvent]);
+
     const primaryCalendarId = calendars[0]?.id;
+    const saveDisabled = isEditMode ? !existingEvent : !primaryCalendarId;
 
     if (!hydrated) {
         return (
@@ -183,10 +215,18 @@ export default function EventEditorScreen() {
         );
     }
 
+    if (isEditMode && !existingEvent) {
+        return (
+            <View style={{ flex: 1, padding: 16, backgroundColor: colors.background }}>
+                <Text style={{ color: colors.text }}>No se encontro el evento a editar.</Text>
+            </View>
+        );
+    }
+
     return (
         <ScrollView contentContainerStyle={{ padding: 16, gap: 12, backgroundColor: colors.background }}>
             <Text style={{ fontSize: 24, fontWeight: "700", color: colors.text }}>
-                Nuevo evento
+                {isEditMode ? "Editar evento" : "Nuevo evento"}
             </Text>
 
             <TextInput
@@ -194,6 +234,20 @@ export default function EventEditorScreen() {
                 placeholderTextColor={colors.text}
                 value={title}
                 onChangeText={setTitle}
+                style={{
+                    borderWidth: 1,
+                    borderRadius: 12,
+                    padding: 12,
+                    borderColor: colors.border,
+                    color: colors.text,
+                }}
+            />
+
+            <TextInput
+                placeholder="Etiqueta"
+                placeholderTextColor={colors.text}
+                value={label}
+                onChangeText={setLabel}
                 style={{
                     borderWidth: 1,
                     borderRadius: 12,
@@ -231,6 +285,33 @@ export default function EventEditorScreen() {
                     color: colors.text,
                 }}
             />
+
+            <View style={{ gap: 8 }}>
+                <Text style={{ color: colors.text, fontWeight: "700" }}>Prioridad</Text>
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                    {priorityOptions.map((option) => {
+                        const selected = option.value === priority;
+                        return (
+                            <Pressable
+                                key={option.value}
+                                onPress={() => setPriority(option.value)}
+                                style={{
+                                    paddingHorizontal: 12,
+                                    paddingVertical: 8,
+                                    borderWidth: 1,
+                                    borderRadius: 10,
+                                    borderColor: selected ? colors.primary : colors.border,
+                                    backgroundColor: selected ? colors.primary : "transparent",
+                                }}
+                            >
+                                <Text style={{ color: selected ? "#ffffff" : colors.text }}>
+                                    {option.label}
+                                </Text>
+                            </Pressable>
+                        );
+                    })}
+                </View>
+            </View>
 
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                 <Switch
@@ -301,6 +382,22 @@ export default function EventEditorScreen() {
 
             <Pressable
                 onPress={() => {
+                    if (isEditMode) {
+                        if (!eventId || !existingEvent) return;
+                        updateEvent(eventId, {
+                            title: title.trim() || "Evento sin titulo",
+                            label: label.trim() || undefined,
+                            description: description.trim() || undefined,
+                            priority,
+                            color: color.trim() || undefined,
+                            location: location.trim() || undefined,
+                            allDay,
+                            startISO: startDate.toISOString(),
+                            endISO: endDate.toISOString(),
+                        });
+                        router.back();
+                        return;
+                    }
                     if (!primaryCalendarId) return;
                     const now = new Date();
                     const end = new Date(now.getTime() + 60 * 60 * 1000);
@@ -309,7 +406,9 @@ export default function EventEditorScreen() {
                         id: `ev-${id()}`,
                         calendarId: primaryCalendarId,
                         title: title.trim() || "Evento sin titulo",
+                        label: label.trim() || undefined,
                         description: description.trim() || undefined,
+                        priority,
                         color: color.trim() || undefined,
                         location: location.trim() || undefined,
                         allDay,
@@ -325,11 +424,13 @@ export default function EventEditorScreen() {
                     borderRadius: 12,
                     alignItems: "center",
                     borderColor: colors.border,
-                    opacity: primaryCalendarId ? 1 : 0.5,
+                    opacity: saveDisabled ? 0.5 : 1,
                 }}
-                disabled={!primaryCalendarId}
+                disabled={saveDisabled}
             >
-                <Text style={{ color: colors.text }}>Guardar</Text>
+                <Text style={{ color: colors.text }}>
+                    {isEditMode ? "Guardar cambios" : "Guardar"}
+                </Text>
             </Pressable>
         </ScrollView>
     );

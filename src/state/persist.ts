@@ -5,6 +5,7 @@ const KEY = "calendario:v1";
 export type PersistedState = {
     calendars: unknown;
     events: unknown;
+    binEvents?: unknown;
 };
 
 export async function saveState(state: PersistedState) {

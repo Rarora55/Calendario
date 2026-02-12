@@ -1,45 +1,87 @@
-import { View, Text, Pressable } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
 import { useAppStore } from "@/src/state/store";
+import { useTheme } from "@react-navigation/native";
+import { Stack, router, useLocalSearchParams } from "expo-router";
+import { Pressable, Text, View } from "react-native";
+
+const priorityLabel: Record<string, string> = {
+  baja: "Baja",
+  media: "Media",
+  alta: "Alta",
+};
 
 export default function EventDetailScreen() {
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const event = useAppStore((s) => (id ? s.getEventById(id) : undefined));
-  const calendars = useAppStore((s) => s.calendars);
   const deleteEvent = useAppStore((s) => s.deleteEvent);
 
   if (!event) {
     return (
-      <View style={{ flex: 1, padding: 16 }}>
-        <Text>No se encontró el evento.</Text>
+      <View style={{ flex: 1, padding: 16, backgroundColor: colors.background }}>
+        <Text style={{ color: colors.text }}>No se encontro el evento.</Text>
       </View>
     );
   }
 
-  const cal = calendars.find((c) => c.id === event.calendarId);
+  const priority = event.priority ?? "media";
+  const fromDate = new Date(event.startISO).toLocaleString();
+  const toDate = new Date(event.endISO).toLocaleString();
 
   return (
-    <View style={{ flex: 1, padding: 16, gap: 12 }}>
-      <Text style={{ fontSize: 24, fontWeight: "700" }}>{event.title}</Text>
-      <Text style={{ opacity: 0.7 }}>ID: {event.id}</Text>
-      <Text style={{ opacity: 0.7 }}>Calendar ID: {event.calendarId}</Text>
-      <Text style={{ opacity: 0.7 }}>Calendario: {cal?.name ?? "—"}</Text>
-      <Text>Inicio: {new Date(event.startISO).toLocaleString()}</Text>
-      <Text>Fin: {new Date(event.endISO).toLocaleString()}</Text>
-      <Text>Todo el dia: {event.allDay ? "Si" : "No"}</Text>
-      <Text>Ubicacion: {event.location ?? "—"}</Text>
+    <View style={{ flex: 1, padding: 16, gap: 12, backgroundColor: colors.background }}>
+      <Stack.Screen options={{ title: event.title }} />
+      <Text style={{ fontSize: 24, fontWeight: "700", color: colors.text }}>{event.title}</Text>
 
-      {event.description ? (
-        <Text>Descripción: {event.description}</Text>
-      ) : (
-        <Text>(Sin descripción)</Text>
-      )}
+      <View
+        style={{
+          borderWidth: 1,
+          borderRadius: 12,
+          borderColor: colors.border,
+          padding: 12,
+          gap: 10,
+        }}
+      >
+        <Text style={{ color: colors.text }}>
+          <Text style={{ fontWeight: "700" }}>Nombre: </Text>
+          {event.title}
+        </Text>
+        <Text style={{ color: colors.text }}>
+          <Text style={{ fontWeight: "700" }}>Etiqueta: </Text>
+          {event.label?.trim() ? event.label : "Sin etiqueta"}
+        </Text>
+        <Text style={{ color: colors.text }}>
+          <Text style={{ fontWeight: "700" }}>Descripcion: </Text>
+          {event.description?.trim() ? event.description : "Sin descripcion"}
+        </Text>
+        <Text style={{ color: colors.text }}>
+          <Text style={{ fontWeight: "700" }}>Localizacion: </Text>
+          {event.location?.trim() ? event.location : "Sin localizacion"}
+        </Text>
+        <Text style={{ color: colors.text }}>
+          <Text style={{ fontWeight: "700" }}>Prioridad: </Text>
+          {priorityLabel[priority] ?? "Media"}
+        </Text>
+        <Text style={{ color: colors.text }}>
+          <Text style={{ fontWeight: "700" }}>Comienza: </Text>
+          {fromDate}
+        </Text>
+        <Text style={{ color: colors.text }}>
+          <Text style={{ fontWeight: "700" }}>Termina: </Text>
+          {toDate}
+        </Text>
+      </View>
 
       <Pressable
         onPress={() => router.push({ pathname: "/event-editor", params: { id: event.id } })}
-        style={{ padding: 14, borderWidth: 1, borderRadius: 12, alignItems: "center" }}
+        style={{
+          padding: 14,
+          borderWidth: 1,
+          borderRadius: 12,
+          alignItems: "center",
+          borderColor: colors.border,
+        }}
       >
-        <Text>Editar</Text>
+        <Text style={{ color: colors.text }}>Editar</Text>
       </Pressable>
 
       <Pressable
@@ -47,9 +89,15 @@ export default function EventDetailScreen() {
           deleteEvent(event.id);
           router.back();
         }}
-        style={{ padding: 14, borderWidth: 1, borderRadius: 12, alignItems: "center" }}
+        style={{
+          padding: 14,
+          borderWidth: 1,
+          borderRadius: 12,
+          alignItems: "center",
+          borderColor: colors.border,
+        }}
       >
-        <Text>Borrar</Text>
+        <Text style={{ color: colors.text }}>Mover a Bin</Text>
       </Pressable>
     </View>
   );

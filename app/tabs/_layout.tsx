@@ -1,17 +1,14 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs } from 'expo-router';
-import React from 'react';
-import { Pressable } from 'react-native';
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { Link, Tabs } from "expo-router";
+import React from "react";
+import { Pressable } from "react-native";
 
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
-import { useColorScheme } from '@/components/useColorScheme';
-import Colors from '@/constants/Colors';
+import { useClientOnlyValue } from "@/components/useClientOnlyValue";
+import { useColorScheme } from "@/components/useColorScheme";
+import Colors from "@/constants/Colors";
 
-
-
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
+  name: React.ComponentProps<typeof FontAwesome>["name"];
   color: string;
 }) {
   return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
@@ -23,15 +20,14 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
+        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         headerShown: useClientOnlyValue(false, true),
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'General',
+          title: "General",
           tabBarIcon: ({ color }) => <TabBarIcon name="calendar" color={color} />,
           headerRight: () => (
             <Link href="/event-editor" asChild>
@@ -40,7 +36,7 @@ export default function TabLayout() {
                   <FontAwesome
                     name="plus"
                     size={22}
-                    color={Colors[colorScheme ?? 'light'].text}
+                    color={Colors[colorScheme ?? "light"].text}
                     style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
                   />
                 )}
@@ -50,9 +46,28 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="calendars"
+        options={{
+          title: "Calendario",
+          tabBarIcon: () => (
+            <TabBarIcon
+              name="calendar-o"
+              color={colorScheme === "dark" ? "#ffffff" : "#111111"}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="priorities"
+        options={{
+          title: "Prioridades",
+          tabBarIcon: ({ color }) => <TabBarIcon name="circle" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="bin"
         options={{
-          title: 'Bin',
+          title: "Bin",
           tabBarIcon: ({ color }) => <TabBarIcon name="trash" color={color} />,
         }}
       />

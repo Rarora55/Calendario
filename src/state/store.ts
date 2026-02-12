@@ -8,6 +8,7 @@ type AppState = {
     hydrated: boolean;
     calendars: Calendar[];
     events: CalendarEvent[];
+    binEvents: CalendarEvent[];
 
     hydrate: () => Promise<void>;
 
@@ -19,6 +20,9 @@ type AppState = {
     addEvent: (e: CalendarEvent) => void;
     updateEvent: (id: string, patch: Partial<CalendarEvent>) => void;
     deleteEvent: (id: string) => void;
+    restoreEventFromBin: (id: string) => void;
+    deleteEventPermanently: (id: string) => void;
+    clearBin: () => void;
     getEventById: (id: string) => CalendarEvent | undefined;
 
     //Selectors/Helpers
@@ -30,6 +34,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     hydrated: false,
     calendars: [],
     events: [],
+    binEvents: [],
 
     hydrate: async () => {
         const persisted = await loadState();
@@ -38,6 +43,9 @@ export const useAppStore = create<AppState>((set, get) => ({
                 hydrated: true,
                 calendars: persisted.calendars as Calendar[],
                 events: persisted.events as CalendarEvent[],
+                binEvents: Array.isArray(persisted.binEvents)
+                    ? (persisted.binEvents as CalendarEvent[])
+                    : [],
             });
             return;
         }
@@ -45,6 +53,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             hydrated: true,
             calendars: seedCalendars,
             events: seedEvent,
+            binEvents: [],
         });
     },
 
@@ -54,6 +63,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         void saveState({
             calendars: next,
             events: get().events,
+            binEvents: get().binEvents,
         });
     },
 
@@ -65,6 +75,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         void saveState({
             calendars: next,
             events: get().events,
+            binEvents: get().binEvents,
         });
     },
 
@@ -74,6 +85,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         void saveState({
             calendars: get().calendars,
             events: next,
+            binEvents: get().binEvents,
         });
 
     },
@@ -86,20 +98,62 @@ export const useAppStore = create<AppState>((set, get) => ({
         void saveState({
             calendars: get().calendars,
             events: next,
+            binEvents: get().binEvents,
         });
     },
 
     deleteEvent: (id) => {
-        const next = get().events.filter((event) => event.id !== id);
-        set({ events: next });
+        const current = get().events;
+        const toDelete = current.find((event) => event.id === id);
+        if (!toDelete) return;
+        const nextEvents = current.filter((event) => event.id !== id);
+        const nextBin = [...get().binEvents.filter((event) => event.id !== id), toDelete];
+        set({ events: nextEvents, binEvents: nextBin });
         void saveState({
             calendars: get().calendars,
-            events: next,
+            events: nextEvents,
+            binEvents: nextBin,
+        });
+    },
+
+    restoreEventFromBin: (id) => {
+        const currentBin = get().binEvents;
+        const toRestore = currentBin.find((event) => event.id === id);
+        if (!toRestore) return;
+        const nextBin = currentBin.filter((event) => event.id !== id);
+        const nextEvents = [...get().events.filter((event) => event.id !== id), toRestore];
+        set({ events: nextEvents, binEvents: nextBin });
+        void saveState({
+            calendars: get().calendars,
+            events: nextEvents,
+            binEvents: nextBin,
+        });
+    },
+
+    deleteEventPermanently: (id) => {
+        const nextBin = get().binEvents.filter((event) => event.id !== id);
+        set({ binEvents: nextBin });
+        void saveState({
+            calendars: get().calendars,
+            events: get().events,
+            binEvents: nextBin,
+        });
+    },
+
+    clearBin: () => {
+        set({ binEvents: [] });
+        void saveState({
+            calendars: get().calendars,
+            events: get().events,
+            binEvents: [],
         });
     },
 
     getEventById: (id) => {
-        return get().events.find((event) => event.id === id);
+        return (
+            get().events.find((event) => event.id === id) ??
+            get().binEvents.find((event) => event.id === id)
+        );
     },
 
     getVisibleCalendars: () => {
