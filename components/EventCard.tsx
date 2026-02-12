@@ -1,4 +1,11 @@
-import { Pressable, PressableProps, Text, View, ViewStyle } from "react-native";
+import {
+  Pressable,
+  PressableProps,
+  PressableStateCallbackType,
+  Text,
+  View,
+  ViewStyle,
+} from "react-native";
 
 type Props = {
   title: string;
@@ -9,6 +16,7 @@ type Props = {
   borderColor?: string;
   backgroundColor?: string;
   containerStyle?: ViewStyle;
+  onPress?: () => void;
   actionLabel?: string;
   onActionPress?: () => void;
   dragHandleProps?: PressableProps;
@@ -23,38 +31,34 @@ export default function EventCard({
   borderColor,
   backgroundColor,
   containerStyle,
+  onPress,
   actionLabel = "Ver",
   onActionPress,
   dragHandleProps,
 }: Props) {
-  return (
-    <View
-      style={[
-        {
-          padding: 12,
-          borderWidth: 1,
-          borderRadius: 12,
-          gap: 6,
-          borderColor,
-          backgroundColor,
-        },
-        containerStyle,
-      ]}
-    >
+  const dragHandleBaseStyle = {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: borderColor,
+  };
+  const dragHandleOriginalStyle = dragHandleProps?.style;
+  const dragHandleStyle: PressableProps["style"] =
+    typeof dragHandleOriginalStyle === "function"
+      ? (state: PressableStateCallbackType) => [
+          dragHandleBaseStyle,
+          dragHandleOriginalStyle(state),
+        ]
+      : [dragHandleBaseStyle, dragHandleOriginalStyle];
+
+  const content = (
+    <>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         {dragHandleProps ? (
           <Pressable
             {...dragHandleProps}
-            style={[
-              {
-                paddingHorizontal: 8,
-                paddingVertical: 4,
-                borderRadius: 6,
-                borderWidth: 1,
-                borderColor: borderColor,
-              },
-              dragHandleProps.style,
-            ]}
+            style={dragHandleStyle}
           >
             <Text style={{ color: textColor, fontWeight: "700" }}>||</Text>
           </Pressable>
@@ -79,6 +83,28 @@ export default function EventCard({
         ) : null}
       </View>
       <Text style={{ opacity: 0.7, color: subtitleColor }}>{subtitle}</Text>
-    </View>
+    </>
   );
+
+  const containerStyleValue = [
+    {
+      padding: 12,
+      borderWidth: 1,
+      borderRadius: 12,
+      gap: 6,
+      borderColor,
+      backgroundColor,
+    },
+    containerStyle,
+  ];
+
+  if (onPress) {
+    return (
+      <Pressable onPress={onPress} style={containerStyleValue}>
+        {content}
+      </Pressable>
+    );
+  }
+
+  return <View style={containerStyleValue}>{content}</View>;
 }

@@ -42,34 +42,54 @@ function DraggableEventCard({
     onDragEnd,
 }: DraggableEventCardProps) {
     const dragEnabledRef = useRef(false);
+    const panActiveRef = useRef(false);
     const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pan = useRef(new Animated.ValueXY()).current;
+    const clearLongPressTimer = () => {
+        if (longPressTimerRef.current) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
+        }
+    };
+    const startLongPressTimer = () => {
+        clearLongPressTimer();
+        longPressTimerRef.current = setTimeout(() => {
+            dragEnabledRef.current = true;
+            onDragStart(event.id);
+        }, 300);
+    };
+    const stopDragIfNeeded = () => {
+        clearLongPressTimer();
+        if (dragEnabledRef.current && !panActiveRef.current) {
+            dragEnabledRef.current = false;
+            onDragEnd();
+            Animated.spring(pan, {
+                toValue: { x: 0, y: 0 },
+                useNativeDriver: false,
+            }).start();
+        }
+    };
     const panResponder = useRef(
         PanResponder.create({
-            onStartShouldSetPanResponder: () => true,
+            onStartShouldSetPanResponder: () => false,
             onMoveShouldSetPanResponder: () => dragEnabledRef.current,
             onMoveShouldSetPanResponderCapture: () => dragEnabledRef.current,
-            onStartShouldSetPanResponderCapture: () => true,
+            onStartShouldSetPanResponderCapture: () => false,
             onPanResponderTerminationRequest: () => false,
             onPanResponderGrant: () => {
-                longPressTimerRef.current = setTimeout(() => {
-                    dragEnabledRef.current = true;
-                    onDragStart(event.id);
-                }, 300);
+                panActiveRef.current = true;
             },
             onPanResponderMove: (_, gesture) => {
                 if (!dragEnabledRef.current) return;
                 pan.setValue({ x: gesture.dx, y: gesture.dy });
             },
             onPanResponderRelease: (_, gesture) => {
-                if (longPressTimerRef.current) {
-                    clearTimeout(longPressTimerRef.current);
-                    longPressTimerRef.current = null;
-                }
-                if (isInBin(gesture.moveX, gesture.moveY)) {
+                clearLongPressTimer();
+                if (dragEnabledRef.current && isInBin(gesture.moveX, gesture.moveY)) {
                     onDrop(event.id);
                 }
                 dragEnabledRef.current = false;
+                panActiveRef.current = false;
                 onDragEnd();
                 Animated.spring(pan, {
                     toValue: { x: 0, y: 0 },
@@ -77,11 +97,9 @@ function DraggableEventCard({
                 }).start();
             },
             onPanResponderTerminate: () => {
-                if (longPressTimerRef.current) {
-                    clearTimeout(longPressTimerRef.current);
-                    longPressTimerRef.current = null;
-                }
+                clearLongPressTimer();
                 dragEnabledRef.current = false;
+                panActiveRef.current = false;
                 onDragEnd();
                 Animated.spring(pan, {
                     toValue: { x: 0, y: 0 },
@@ -92,7 +110,17 @@ function DraggableEventCard({
     ).current;
 
     return (
-        <Animated.View style={{ transform: pan.getTranslateTransform(), zIndex: 2 }}>
+        <Animated.View
+            onTouchStart={startLongPressTimer}
+            onTouchEnd={stopDragIfNeeded}
+            onTouchCancel={stopDragIfNeeded}
+            {...panResponder.panHandlers}
+            style={{
+                transform: pan.getTranslateTransform(),
+                zIndex: isDragging ? 20 : 2,
+                elevation: isDragging ? 8 : 0,
+            }}
+        >
             <EventCard
                 title={event.title}
                 subtitle={new Date(event.startISO).toLocaleString()}
@@ -101,11 +129,9 @@ function DraggableEventCard({
                 subtitleColor={subtitleColor}
                 borderColor={isDragging ? "#ef4444" : borderColor}
                 backgroundColor={isDragging ? "rgba(239, 68, 68, 0.12)" : undefined}
+                onPress={onPress}
                 actionLabel="Ver"
                 onActionPress={onPress}
-                dragHandleProps={{
-                    ...panResponder.panHandlers,
-                }}
             />
         </Animated.View>
     );
@@ -145,8 +171,10 @@ export default function GeneralScreen() {
     }, [calendars]);
 
     const updateBinArea = () => {
-        binRef.current?.measureInWindow((x, y, width, height) => {
-            setBinArea({ x, y, width, height });
+        requestAnimationFrame(() => {
+            binRef.current?.measureInWindow((x, y, width, height) => {
+                setBinArea({ x, y, width, height });
+            });
         });
     };
 
@@ -159,6 +187,10 @@ export default function GeneralScreen() {
             y <= binArea.y + binArea.height
         );
     };
+
+    useEffect(() => {
+        if (hydrated) updateBinArea();
+    }, [hydrated]);
 
     if (!hydrated) {
         return (
@@ -196,7 +228,10 @@ export default function GeneralScreen() {
                             }
                             onDrop={deleteEvent}
                             isInBin={isInBin}
-                            onDragStart={(id) => setDraggingId(id)}
+                            onDragStart={(id) => {
+                                updateBinArea();
+                                setDraggingId(id);
+                            }}
                             onDragEnd={() => setDraggingId(null)}
                         />
                     );
@@ -205,6 +240,7 @@ export default function GeneralScreen() {
 
             <View
                 ref={binRef}
+                collapsable={false}
                 onLayout={updateBinArea}
                 style={{
                     padding: 12,
