@@ -1,13 +1,19 @@
 import { useAppStore } from "@/src/state/store";
 import { useTheme } from "@react-navigation/native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
-import { Pressable, Text, View } from "react-native";
+import { Linking, Pressable, Text, View } from "react-native";
 
 const priorityLabel: Record<string, string> = {
   baja: "Baja",
   media: "Media",
   alta: "Alta",
 };
+
+function toGoogleMapsLink(value: string) {
+  const trimmed = value.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(trimmed)}`;
+}
 
 export default function EventDetailScreen() {
   const { colors } = useTheme();
@@ -26,6 +32,7 @@ export default function EventDetailScreen() {
   const priority = event.priority ?? "media";
   const fromDate = new Date(event.startISO).toLocaleString();
   const toDate = new Date(event.endISO).toLocaleString();
+  const locationLink = event.location?.trim() ? toGoogleMapsLink(event.location) : undefined;
 
   return (
     <View style={{ flex: 1, padding: 16, gap: 12, backgroundColor: colors.background }}>
@@ -53,10 +60,19 @@ export default function EventDetailScreen() {
           <Text style={{ fontWeight: "700" }}>Descripcion: </Text>
           {event.description?.trim() ? event.description : "Sin descripcion"}
         </Text>
-        <Text style={{ color: colors.text }}>
-          <Text style={{ fontWeight: "700" }}>Localizacion: </Text>
-          {event.location?.trim() ? event.location : "Sin localizacion"}
-        </Text>
+        <View style={{ gap: 6 }}>
+          <Text style={{ color: colors.text }}>
+            <Text style={{ fontWeight: "700" }}>Localizacion: </Text>
+            {locationLink ? "Google Maps" : "Sin localizacion"}
+          </Text>
+          {locationLink ? (
+            <Pressable onPress={() => void Linking.openURL(locationLink)}>
+              <Text style={{ color: colors.primary, fontWeight: "700" }}>
+                Abrir direccion en Google Maps
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
         <Text style={{ color: colors.text }}>
           <Text style={{ fontWeight: "700" }}>Prioridad: </Text>
           {priorityLabel[priority] ?? "Media"}

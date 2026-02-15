@@ -1,5 +1,6 @@
 import EventCard from "@/components/EventCard";
 import { CalendarEvent } from "@/src/domain/Event";
+import { useTabSwipeNavigation } from "@/src/hooks/useTabSwipeNavigation";
 import { useAppStore } from "@/src/state/store";
 import { useTheme } from "@react-navigation/native";
 import { useEffect } from "react";
@@ -7,6 +8,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 
 export default function BinScreen() {
     const { colors } = useTheme();
+    const swipeHandlers = useTabSwipeNavigation();
     const hydrated = useAppStore((s) => s.hydrated);
     const hydrate = useAppStore((s) => s.hydrate);
     const calendars = useAppStore((s) => s.calendars);
@@ -21,7 +23,10 @@ export default function BinScreen() {
 
     if (!hydrated) {
         return (
-            <View style={{ flex: 1, padding: 16, backgroundColor: colors.background }}>
+            <View
+                {...swipeHandlers}
+                style={{ flex: 1, padding: 16, backgroundColor: colors.background }}
+            >
                 <Text style={{ color: colors.text }}>Cargando...</Text>
             </View>
         );
@@ -30,7 +35,10 @@ export default function BinScreen() {
     const calendarById = new Map(calendars.map((c) => [c.id, c]));
 
     return (
-        <View style={{ flex: 1, padding: 16, gap: 12, backgroundColor: colors.background }}>
+        <View
+            {...swipeHandlers}
+            style={{ flex: 1, padding: 16, gap: 12, backgroundColor: colors.background }}
+        >
             <Text style={{ fontSize: 24, fontWeight: "700", color: colors.text }}>
                 Bin
             </Text>

@@ -9,6 +9,7 @@ type AppState = {
     calendars: Calendar[];
     events: CalendarEvent[];
     binEvents: CalendarEvent[];
+    labelHistory: string[];
 
     hydrate: () => Promise<void>;
 
@@ -24,6 +25,7 @@ type AppState = {
     deleteEventPermanently: (id: string) => void;
     clearBin: () => void;
     getEventById: (id: string) => CalendarEvent | undefined;
+    addLabelToHistory: (label: string) => void;
 
     //Selectors/Helpers
     getVisibleCalendars: () => Set<string>;
@@ -35,6 +37,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     calendars: [],
     events: [],
     binEvents: [],
+    labelHistory: [],
 
     hydrate: async () => {
         const persisted = await loadState();
@@ -46,6 +49,9 @@ export const useAppStore = create<AppState>((set, get) => ({
                 binEvents: Array.isArray(persisted.binEvents)
                     ? (persisted.binEvents as CalendarEvent[])
                     : [],
+                labelHistory: Array.isArray(persisted.labelHistory)
+                    ? (persisted.labelHistory as string[])
+                    : [],
             });
             return;
         }
@@ -54,6 +60,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             calendars: seedCalendars,
             events: seedEvent,
             binEvents: [],
+            labelHistory: [],
         });
     },
 
@@ -64,6 +71,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             calendars: next,
             events: get().events,
             binEvents: get().binEvents,
+            labelHistory: get().labelHistory,
         });
     },
 
@@ -76,6 +84,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             calendars: next,
             events: get().events,
             binEvents: get().binEvents,
+            labelHistory: get().labelHistory,
         });
     },
 
@@ -86,6 +95,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             calendars: get().calendars,
             events: next,
             binEvents: get().binEvents,
+            labelHistory: get().labelHistory,
         });
 
     },
@@ -99,6 +109,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             calendars: get().calendars,
             events: next,
             binEvents: get().binEvents,
+            labelHistory: get().labelHistory,
         });
     },
 
@@ -113,6 +124,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             calendars: get().calendars,
             events: nextEvents,
             binEvents: nextBin,
+            labelHistory: get().labelHistory,
         });
     },
 
@@ -127,6 +139,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             calendars: get().calendars,
             events: nextEvents,
             binEvents: nextBin,
+            labelHistory: get().labelHistory,
         });
     },
 
@@ -137,6 +150,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             calendars: get().calendars,
             events: get().events,
             binEvents: nextBin,
+            labelHistory: get().labelHistory,
         });
     },
 
@@ -146,6 +160,24 @@ export const useAppStore = create<AppState>((set, get) => ({
             calendars: get().calendars,
             events: get().events,
             binEvents: [],
+            labelHistory: get().labelHistory,
+        });
+    },
+
+    addLabelToHistory: (label) => {
+        const clean = label.trim();
+        if (!clean) return;
+        const normalized = clean.toLowerCase();
+        const withoutDuplicates = get().labelHistory.filter(
+            (item) => item.trim().toLowerCase() !== normalized
+        );
+        const next = [clean, ...withoutDuplicates].slice(0, 20);
+        set({ labelHistory: next });
+        void saveState({
+            calendars: get().calendars,
+            events: get().events,
+            binEvents: get().binEvents,
+            labelHistory: next,
         });
     },
 

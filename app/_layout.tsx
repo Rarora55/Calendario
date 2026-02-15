@@ -55,7 +55,7 @@ function RootLayoutNav() {
         <Stack.Screen name='day' options={{ title: "Día" }} />
         <Stack.Screen
           name="event-editor"
-          options={{ title: "Evento", presentation: "modal" }}
+          options={{ title: "Crear Evento", presentation: "modal" }}
         />
       </Stack>
     </ThemeProvider>

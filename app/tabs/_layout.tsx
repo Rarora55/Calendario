@@ -22,6 +22,7 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         headerShown: useClientOnlyValue(false, true),
+        animation: "fade",
       }}
     >
       <Tabs.Screen
@@ -69,6 +70,13 @@ export default function TabLayout() {
         options={{
           title: "Bin",
           tabBarIcon: ({ color }) => <TabBarIcon name="trash" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: "Settings",
+          tabBarIcon: ({ color }) => <TabBarIcon name="cog" color={color} />,
         }}
       />
     </Tabs>

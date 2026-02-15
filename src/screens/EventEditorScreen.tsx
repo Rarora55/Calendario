@@ -1,9 +1,9 @@
 import { useAppStore } from "@/src/state/store";
 import type { EventPriority } from "@/src/domain/Event";
 import { useTheme } from "@react-navigation/native";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
+import { Linking, Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
 
 const dayLabels = ["L", "M", "X", "J", "V", "S", "D"];
 const monthLabels = [
@@ -165,6 +165,25 @@ function safeDate(iso: string | undefined, fallback: Date) {
     return Number.isNaN(parsed.getTime()) ? fallback : parsed;
 }
 
+function buildGoogleMapsSearchUrl(address: string) {
+    const query = encodeURIComponent(address.trim());
+    return `https://www.google.com/maps/search/?api=1&query=${query}`;
+}
+
+function getAddressFromLocation(value: string | undefined) {
+    const trimmed = value?.trim();
+    if (!trimmed) return "";
+
+    try {
+        const url = new URL(trimmed);
+        const query = url.searchParams.get("query");
+        if (!query) return trimmed;
+        return decodeURIComponent(query).replace(/\+/g, " ");
+    } catch {
+        return trimmed;
+    }
+}
+
 export default function EventEditorScreen() {
     const { colors } = useTheme();
     const { id: rawId } = useLocalSearchParams<{ id?: string | string[] }>();
@@ -180,7 +199,7 @@ export default function EventEditorScreen() {
     const [title, setTitle] = useState("");
     const [label, setLabel] = useState("");
     const [description, setDescription] = useState("");
-    const [location, setLocation] = useState("");
+    const [locationQuery, setLocationQuery] = useState("");
     const [priority, setPriority] = useState<EventPriority>("media");
     const [allDay, setAllDay] = useState(false);
     const [color, setColor] = useState("");
@@ -196,7 +215,7 @@ export default function EventEditorScreen() {
         setTitle(existingEvent.title ?? "");
         setLabel(existingEvent.label ?? "");
         setDescription(existingEvent.description ?? "");
-        setLocation(existingEvent.location ?? "");
+        setLocationQuery(getAddressFromLocation(existingEvent.location));
         setPriority(existingEvent.priority ?? "media");
         setAllDay(Boolean(existingEvent.allDay));
         setColor(existingEvent.color ?? "");
@@ -206,6 +225,47 @@ export default function EventEditorScreen() {
 
     const primaryCalendarId = calendars[0]?.id;
     const saveDisabled = isEditMode ? !existingEvent : !primaryCalendarId;
+    const locationLink = locationQuery.trim()
+        ? buildGoogleMapsSearchUrl(locationQuery)
+        : undefined;
+
+    const handleSave = () => {
+        if (isEditMode) {
+            if (!eventId || !existingEvent) return;
+            updateEvent(eventId, {
+                title: title.trim() || "Evento sin titulo",
+                label: label.trim() || undefined,
+                description: description.trim() || undefined,
+                priority,
+                color: color.trim() || undefined,
+                location: locationLink,
+                allDay,
+                startISO: startDate.toISOString(),
+                endISO: endDate.toISOString(),
+            });
+            router.back();
+            return;
+        }
+        if (!primaryCalendarId) return;
+        const now = new Date();
+        const end = new Date(now.getTime() + 60 * 60 * 1000);
+
+        addEvent({
+            id: `ev-${id()}`,
+            calendarId: primaryCalendarId,
+            title: title.trim() || "Evento sin titulo",
+            label: label.trim() || undefined,
+            description: description.trim() || undefined,
+            priority,
+            color: color.trim() || undefined,
+            location: locationLink,
+            allDay,
+            startISO: startDate?.toISOString() || now.toISOString(),
+            endISO: endDate?.toISOString() || end.toISOString(),
+        });
+
+        router.back();
+    };
 
     if (!hydrated) {
         return (
@@ -224,10 +284,29 @@ export default function EventEditorScreen() {
     }
 
     return (
-        <ScrollView contentContainerStyle={{ padding: 16, gap: 12, backgroundColor: colors.background }}>
-            <Text style={{ fontSize: 24, fontWeight: "700", color: colors.text }}>
-                {isEditMode ? "Editar evento" : "Nuevo evento"}
-            </Text>
+        <>
+            <Stack.Screen
+                options={{
+                    title: "Crear Evento",
+                    headerRight: () => (
+                        <Pressable
+                            onPress={handleSave}
+                            disabled={saveDisabled}
+                            style={{ opacity: saveDisabled ? 0.5 : 1, paddingHorizontal: 8, paddingVertical: 4 }}
+                        >
+                            <Text style={{ color: colors.primary, fontWeight: "700" }}>Guardar</Text>
+                        </Pressable>
+                    ),
+                }}
+            />
+            <ScrollView
+                contentContainerStyle={{
+                    padding: 16,
+                    paddingBottom: 96,
+                    gap: 12,
+                    backgroundColor: colors.background,
+                }}
+            >
 
             <TextInput
                 placeholder="Titulo"
@@ -273,10 +352,10 @@ export default function EventEditorScreen() {
             />
 
             <TextInput
-                placeholder="Ubicacion"
+                placeholder="Localizacion"
                 placeholderTextColor={colors.text}
-                value={location}
-                onChangeText={setLocation}
+                value={locationQuery}
+                onChangeText={setLocationQuery}
                 style={{
                     borderWidth: 1,
                     borderRadius: 12,
@@ -285,6 +364,22 @@ export default function EventEditorScreen() {
                     color: colors.text,
                 }}
             />
+            {locationLink ? (
+                <Pressable
+                    onPress={() => void Linking.openURL(locationLink)}
+                    style={{
+                        padding: 12,
+                        borderWidth: 1,
+                        borderRadius: 12,
+                        borderColor: colors.border,
+                        alignItems: "center",
+                    }}
+                >
+                    <Text style={{ color: colors.primary, fontWeight: "700" }}>
+                        Abrir busqueda en Google Maps
+                    </Text>
+                </Pressable>
+            ) : null}
 
             <View style={{ gap: 8 }}>
                 <Text style={{ color: colors.text, fontWeight: "700" }}>Prioridad</Text>
@@ -380,58 +475,7 @@ export default function EventEditorScreen() {
                 </Text>
             ) : null}
 
-            <Pressable
-                onPress={() => {
-                    if (isEditMode) {
-                        if (!eventId || !existingEvent) return;
-                        updateEvent(eventId, {
-                            title: title.trim() || "Evento sin titulo",
-                            label: label.trim() || undefined,
-                            description: description.trim() || undefined,
-                            priority,
-                            color: color.trim() || undefined,
-                            location: location.trim() || undefined,
-                            allDay,
-                            startISO: startDate.toISOString(),
-                            endISO: endDate.toISOString(),
-                        });
-                        router.back();
-                        return;
-                    }
-                    if (!primaryCalendarId) return;
-                    const now = new Date();
-                    const end = new Date(now.getTime() + 60 * 60 * 1000);
-
-                    addEvent({
-                        id: `ev-${id()}`,
-                        calendarId: primaryCalendarId,
-                        title: title.trim() || "Evento sin titulo",
-                        label: label.trim() || undefined,
-                        description: description.trim() || undefined,
-                        priority,
-                        color: color.trim() || undefined,
-                        location: location.trim() || undefined,
-                        allDay,
-                        startISO: startDate?.toISOString() || now.toISOString(),
-                        endISO: endDate?.toISOString() || end.toISOString(),
-                    });
-
-                    router.back();
-                }}
-                style={{
-                    padding: 14,
-                    borderWidth: 1,
-                    borderRadius: 12,
-                    alignItems: "center",
-                    borderColor: colors.border,
-                    opacity: saveDisabled ? 0.5 : 1,
-                }}
-                disabled={saveDisabled}
-            >
-                <Text style={{ color: colors.text }}>
-                    {isEditMode ? "Guardar cambios" : "Guardar"}
-                </Text>
-            </Pressable>
-        </ScrollView>
+            </ScrollView>
+        </>
     );
 }
