@@ -7,6 +7,7 @@ export type PersistedState = {
     events: unknown;
     binEvents?: unknown;
     labelHistory?: unknown;
+    labels?: unknown;
 };
 
 export async function saveState(state: PersistedState) {

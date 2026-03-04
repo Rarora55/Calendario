@@ -1,4 +1,6 @@
 import { useTabSwipeNavigation } from "@/src/hooks/useTabSwipeNavigation";
+import { LABEL_COLOR_OPTIONS } from "@/src/domain/Label";
+import { useAppStore } from "@/src/state/store";
 import {
     clearGoogleUserSession,
     loadGoogleUserSession,
@@ -11,7 +13,7 @@ import { makeRedirectUri, ResponseType } from "expo-auth-session";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Image, Platform, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Image, Platform, Pressable, ScrollView, Text, View } from "react-native";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -29,6 +31,8 @@ function toNativeRedirectScheme(clientId?: string) {
 export default function SettingsScreen() {
     const { colors } = useTheme();
     const swipeHandlers = useTabSwipeNavigation();
+    const labels = useAppStore((s) => s.labels);
+    const updateLabelColor = useAppStore((s) => s.updateLabelColor);
     const [googleUser, setGoogleUser] = useState<GoogleUserSession | null>(null);
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
@@ -52,6 +56,10 @@ export default function SettingsScreen() {
     const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
     const verifyEndpoint = process.env.EXPO_PUBLIC_AUTH_VERIFY_ENDPOINT?.trim();
     const hasVerifyEndpoint = Boolean(verifyEndpoint);
+    const sortedLabels = useMemo(
+        () => [...labels].sort((a, b) => a.name.localeCompare(b.name, "es")),
+        [labels]
+    );
 
     const redirectUri = useMemo(() => {
         if (Platform.OS === "web") {
@@ -225,9 +233,10 @@ export default function SettingsScreen() {
     };
 
     return (
-        <View
+        <ScrollView
             {...swipeHandlers}
-            style={{ flex: 1, padding: 16, gap: 12, backgroundColor: colors.background }}
+            style={{ flex: 1, backgroundColor: colors.background }}
+            contentContainerStyle={{ padding: 16, gap: 12 }}
         >
             <Text style={{ fontSize: 24, fontWeight: "700", color: colors.text }}>Ajustes</Text>
 
@@ -303,6 +312,66 @@ export default function SettingsScreen() {
                     <Text style={{ color: colors.text, opacity: 0.8 }}>{message}</Text>
                 ) : null}
             </View>
-        </View>
+
+            <View
+                style={{
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    borderRadius: 12,
+                    padding: 12,
+                    gap: 10,
+                }}
+            >
+                <Text style={{ color: colors.text, fontWeight: "700" }}>
+                    Grupos y colores
+                </Text>
+
+                {sortedLabels.length ? (
+                    sortedLabels.map((label) => (
+                        <View key={label.name.toLowerCase()} style={{ gap: 8 }}>
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                                <View
+                                    style={{
+                                        width: 10,
+                                        height: 10,
+                                        borderRadius: 2,
+                                        backgroundColor: label.color,
+                                    }}
+                                />
+                                <Text style={{ color: colors.text }}>{label.name}</Text>
+                            </View>
+
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={{ flexDirection: "row", gap: 8 }}
+                            >
+                                {LABEL_COLOR_OPTIONS.map((option) => {
+                                    const selected = option === label.color;
+                                    return (
+                                        <Pressable
+                                            key={`${label.name}-${option}`}
+                                            onPress={() => updateLabelColor(label.name, option)}
+                                            style={{
+                                                width: 26,
+                                                height: 26,
+                                                borderRadius: 6,
+                                                backgroundColor: option,
+                                                borderWidth: selected ? 2 : 1,
+                                                borderColor: selected ? colors.text : colors.border,
+                                            }}
+                                        />
+                                    );
+                                })}
+                            </ScrollView>
+                        </View>
+                    ))
+                ) : (
+                    <Text style={{ color: colors.text, opacity: 0.8 }}>
+                        Crea etiquetas en el editor de eventos para configurarlas aqui.
+                    </Text>
+                )}
+            </View>
+        </ScrollView>
     );
 }

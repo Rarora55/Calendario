@@ -1,5 +1,5 @@
-import { useAppStore } from "@/src/state/store";
 import type { EventPriority } from "@/src/domain/Event";
+import { useAppStore } from "@/src/state/store";
 import { useTheme } from "@react-navigation/native";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -21,7 +21,7 @@ const monthLabels = [
     "Diciembre",
 ];
 
-const colorOptions = ["#111827", "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6"];
+const eventColorOptions = ["#111827", "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6"];
 const priorityOptions: { value: EventPriority; label: string }[] = [
     { value: "baja", label: "Baja" },
     { value: "media", label: "Media" },
@@ -184,6 +184,10 @@ function getAddressFromLocation(value: string | undefined) {
     }
 }
 
+function normalize(value: string) {
+    return value.trim().toLowerCase();
+}
+
 export default function EventEditorScreen() {
     const { colors } = useTheme();
     const { id: rawId } = useLocalSearchParams<{ id?: string | string[] }>();
@@ -193,11 +197,12 @@ export default function EventEditorScreen() {
     const addEvent = useAppStore((s) => s.addEvent);
     const updateEvent = useAppStore((s) => s.updateEvent);
     const existingEvent = useAppStore((s) => (eventId ? s.getEventById(eventId) : undefined));
+    const labels = useAppStore((s) => s.labels);
     const calendars = useAppStore((s) => s.calendars);
     const isEditMode = Boolean(eventId);
 
     const [title, setTitle] = useState("");
-    const [label, setLabel] = useState("");
+    const [selectedGroup, setSelectedGroup] = useState("");
     const [description, setDescription] = useState("");
     const [locationQuery, setLocationQuery] = useState("");
     const [priority, setPriority] = useState<EventPriority>("media");
@@ -213,7 +218,7 @@ export default function EventEditorScreen() {
     useEffect(() => {
         if (!hydrated || !eventId || !existingEvent) return;
         setTitle(existingEvent.title ?? "");
-        setLabel(existingEvent.label ?? "");
+        setSelectedGroup(existingEvent.label ?? "");
         setDescription(existingEvent.description ?? "");
         setLocationQuery(getAddressFromLocation(existingEvent.location));
         setPriority(existingEvent.priority ?? "media");
@@ -223,18 +228,37 @@ export default function EventEditorScreen() {
         setEndDate(safeDate(existingEvent.endISO, new Date(Date.now() + 60 * 60 * 1000)));
     }, [hydrated, eventId, existingEvent]);
 
+    const sortedGroups = useMemo(
+        () => [...labels].sort((a, b) => a.name.localeCompare(b.name, "es")),
+        [labels]
+    );
+    const hasGroups = sortedGroups.length > 0;
+    const selectedGroupExists = sortedGroups.some(
+        (group) => normalize(group.name) === normalize(selectedGroup)
+    );
+
+    useEffect(() => {
+        if (!selectedGroup.trim()) return;
+        if (selectedGroupExists) return;
+        setSelectedGroup("");
+    }, [selectedGroup, selectedGroupExists]);
+
     const primaryCalendarId = calendars[0]?.id;
-    const saveDisabled = isEditMode ? !existingEvent : !primaryCalendarId;
+    const saveDisabled =
+        (isEditMode ? !existingEvent : !primaryCalendarId) || !selectedGroup.trim();
     const locationLink = locationQuery.trim()
         ? buildGoogleMapsSearchUrl(locationQuery)
         : undefined;
 
     const handleSave = () => {
+        const cleanGroup = selectedGroup.trim();
+        if (!cleanGroup) return;
+
         if (isEditMode) {
             if (!eventId || !existingEvent) return;
             updateEvent(eventId, {
                 title: title.trim() || "Evento sin titulo",
-                label: label.trim() || undefined,
+                label: cleanGroup,
                 description: description.trim() || undefined,
                 priority,
                 color: color.trim() || undefined,
@@ -254,7 +278,7 @@ export default function EventEditorScreen() {
             id: `ev-${id()}`,
             calendarId: primaryCalendarId,
             title: title.trim() || "Evento sin titulo",
-            label: label.trim() || undefined,
+            label: cleanGroup,
             description: description.trim() || undefined,
             priority,
             color: color.trim() || undefined,
@@ -287,7 +311,7 @@ export default function EventEditorScreen() {
         <>
             <Stack.Screen
                 options={{
-                    title: "Crear Evento",
+                    title: isEditMode ? "Editar Evento" : "Crear Evento",
                     headerRight: () => (
                         <Pressable
                             onPress={handleSave}
@@ -307,174 +331,228 @@ export default function EventEditorScreen() {
                     backgroundColor: colors.background,
                 }}
             >
-
-            <TextInput
-                placeholder="Titulo"
-                placeholderTextColor={colors.text}
-                value={title}
-                onChangeText={setTitle}
-                style={{
-                    borderWidth: 1,
-                    borderRadius: 12,
-                    padding: 12,
-                    borderColor: colors.border,
-                    color: colors.text,
-                }}
-            />
-
-            <TextInput
-                placeholder="Etiqueta"
-                placeholderTextColor={colors.text}
-                value={label}
-                onChangeText={setLabel}
-                style={{
-                    borderWidth: 1,
-                    borderRadius: 12,
-                    padding: 12,
-                    borderColor: colors.border,
-                    color: colors.text,
-                }}
-            />
-
-            <TextInput
-                placeholder="Descripcion"
-                placeholderTextColor={colors.text}
-                value={description}
-                onChangeText={setDescription}
-                style={{
-                    borderWidth: 1,
-                    borderRadius: 12,
-                    padding: 12,
-                    borderColor: colors.border,
-                    color: colors.text,
-                }}
-                multiline
-            />
-
-            <TextInput
-                placeholder="Localizacion"
-                placeholderTextColor={colors.text}
-                value={locationQuery}
-                onChangeText={setLocationQuery}
-                style={{
-                    borderWidth: 1,
-                    borderRadius: 12,
-                    padding: 12,
-                    borderColor: colors.border,
-                    color: colors.text,
-                }}
-            />
-            {locationLink ? (
-                <Pressable
-                    onPress={() => void Linking.openURL(locationLink)}
+                <TextInput
+                    placeholder="Titulo"
+                    placeholderTextColor={colors.text}
+                    value={title}
+                    onChangeText={setTitle}
                     style={{
-                        padding: 12,
                         borderWidth: 1,
                         borderRadius: 12,
+                        padding: 12,
                         borderColor: colors.border,
-                        alignItems: "center",
+                        color: colors.text,
                     }}
-                >
-                    <Text style={{ color: colors.primary, fontWeight: "700" }}>
-                        Abrir busqueda en Google Maps
-                    </Text>
-                </Pressable>
-            ) : null}
+                />
 
-            <View style={{ gap: 8 }}>
-                <Text style={{ color: colors.text, fontWeight: "700" }}>Prioridad</Text>
-                <View style={{ flexDirection: "row", gap: 8 }}>
-                    {priorityOptions.map((option) => {
-                        const selected = option.value === priority;
-                        return (
+                <View style={{ gap: 8 }}>
+                    <Text style={{ color: colors.text, fontWeight: "700" }}>Grupo</Text>
+                    {hasGroups ? (
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                            {sortedGroups.map((group) => {
+                                const selected = normalize(group.name) === normalize(selectedGroup);
+                                return (
+                                    <Pressable
+                                        key={normalize(group.name)}
+                                        onPress={() => setSelectedGroup(group.name)}
+                                        style={{
+                                            flexDirection: "row",
+                                            alignItems: "center",
+                                            gap: 6,
+                                            paddingHorizontal: 10,
+                                            paddingVertical: 6,
+                                            borderWidth: 1,
+                                            borderRadius: 999,
+                                            borderColor: selected ? colors.primary : colors.border,
+                                            backgroundColor: selected ? colors.primary : "transparent",
+                                        }}
+                                    >
+                                        <View
+                                            style={{
+                                                width: 8,
+                                                height: 8,
+                                                borderRadius: 999,
+                                                backgroundColor: group.color,
+                                            }}
+                                        />
+                                        <Text style={{ color: selected ? "#ffffff" : colors.text }}>
+                                            {group.name}
+                                        </Text>
+                                    </Pressable>
+                                );
+                            })}
+                        </View>
+                    ) : (
+                        <View
+                            style={{
+                                borderWidth: 1,
+                                borderRadius: 12,
+                                borderColor: colors.border,
+                                padding: 12,
+                                gap: 10,
+                            }}
+                        >
+                            <Text style={{ color: colors.text, opacity: 0.8 }}>
+                                No hay grupos creados.
+                            </Text>
                             <Pressable
-                                key={option.value}
-                                onPress={() => setPriority(option.value)}
+                                onPress={() => router.push("/group-editor" as never)}
                                 style={{
+                                    paddingVertical: 10,
                                     paddingHorizontal: 12,
-                                    paddingVertical: 8,
                                     borderWidth: 1,
+                                    borderColor: colors.border,
                                     borderRadius: 10,
-                                    borderColor: selected ? colors.primary : colors.border,
-                                    backgroundColor: selected ? colors.primary : "transparent",
+                                    alignItems: "center",
                                 }}
                             >
-                                <Text style={{ color: selected ? "#ffffff" : colors.text }}>
-                                    {option.label}
-                                </Text>
+                                <Text style={{ color: colors.text }}>Crear grupo</Text>
                             </Pressable>
-                        );
-                    })}
+                        </View>
+                    )}
+                    {hasGroups && !selectedGroup.trim() ? (
+                        <Text style={{ color: "#ef4444" }}>Selecciona un grupo para guardar el evento.</Text>
+                    ) : null}
                 </View>
-            </View>
 
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                <Switch
-                    value={allDay}
-                    onValueChange={setAllDay}
-                    trackColor={{ false: colors.border, true: colors.border }}
-                    thumbColor={colors.text}
+                <TextInput
+                    placeholder="Descripcion"
+                    placeholderTextColor={colors.text}
+                    value={description}
+                    onChangeText={setDescription}
+                    style={{
+                        borderWidth: 1,
+                        borderRadius: 12,
+                        padding: 12,
+                        borderColor: colors.border,
+                        color: colors.text,
+                    }}
+                    multiline
                 />
-                <Text style={{ color: colors.text }}>Todo el dia</Text>
-            </View>
 
-            <CalendarPicker
-                label="Fecha inicio"
-                value={startDate}
-                onChange={setStartDate}
-                colors={colors}
-            />
-
-            <CalendarPicker
-                label="Fecha fin"
-                value={endDate}
-                onChange={setEndDate}
-                colors={colors}
-            />
-
-            <View style={{ gap: 8 }}>
-                <Text style={{ color: colors.text, fontWeight: "700" }}>Color del evento</Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-                    {colorOptions.map((c) => {
-                        const selected = c === color;
-                        return (
-                            <Pressable
-                                key={c}
-                                onPress={() => setColor(c)}
-                                style={{
-                                    width: 30,
-                                    height: 30,
-                                    borderRadius: 6,
-                                    backgroundColor: c,
-                                    borderWidth: selected ? 2 : 1,
-                                    borderColor: selected ? colors.text : colors.border,
-                                }}
-                            />
-                        );
-                    })}
+                <TextInput
+                    placeholder="Localizacion"
+                    placeholderTextColor={colors.text}
+                    value={locationQuery}
+                    onChangeText={setLocationQuery}
+                    style={{
+                        borderWidth: 1,
+                        borderRadius: 12,
+                        padding: 12,
+                        borderColor: colors.border,
+                        color: colors.text,
+                    }}
+                />
+                {locationLink ? (
                     <Pressable
-                        onPress={() => setColor("")}
+                        onPress={() => void Linking.openURL(locationLink)}
                         style={{
-                            paddingHorizontal: 10,
-                            height: 30,
-                            borderRadius: 6,
+                            padding: 12,
                             borderWidth: 1,
+                            borderRadius: 12,
                             borderColor: colors.border,
                             alignItems: "center",
-                            justifyContent: "center",
                         }}
                     >
-                        <Text style={{ color: colors.text }}>Sin color</Text>
+                        <Text style={{ color: colors.primary, fontWeight: "700" }}>
+                            Abrir busqueda en Google Maps
+                        </Text>
                     </Pressable>
+                ) : null}
+
+                <View style={{ gap: 8 }}>
+                    <Text style={{ color: colors.text, fontWeight: "700" }}>Prioridad</Text>
+                    <View style={{ flexDirection: "row", gap: 8 }}>
+                        {priorityOptions.map((option) => {
+                            const selected = option.value === priority;
+                            return (
+                                <Pressable
+                                    key={option.value}
+                                    onPress={() => setPriority(option.value)}
+                                    style={{
+                                        paddingHorizontal: 12,
+                                        paddingVertical: 8,
+                                        borderWidth: 1,
+                                        borderRadius: 10,
+                                        borderColor: selected ? colors.primary : colors.border,
+                                        backgroundColor: selected ? colors.primary : "transparent",
+                                    }}
+                                >
+                                    <Text style={{ color: selected ? "#ffffff" : colors.text }}>
+                                        {option.label}
+                                    </Text>
+                                </Pressable>
+                            );
+                        })}
+                    </View>
                 </View>
-            </View>
 
-            {!primaryCalendarId ? (
-                <Text style={{ color: colors.text }}>
-                    No hay calendarios disponibles para asignar este evento.
-                </Text>
-            ) : null}
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                    <Switch
+                        value={allDay}
+                        onValueChange={setAllDay}
+                        trackColor={{ false: colors.border, true: colors.border }}
+                        thumbColor={colors.text}
+                    />
+                    <Text style={{ color: colors.text }}>Todo el dia</Text>
+                </View>
 
+                <CalendarPicker
+                    label="Fecha inicio"
+                    value={startDate}
+                    onChange={setStartDate}
+                    colors={colors}
+                />
+
+                <CalendarPicker
+                    label="Fecha fin"
+                    value={endDate}
+                    onChange={setEndDate}
+                    colors={colors}
+                />
+
+                <View style={{ gap: 8 }}>
+                    <Text style={{ color: colors.text, fontWeight: "700" }}>Color del evento</Text>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+                        {eventColorOptions.map((value) => {
+                            const selected = value === color;
+                            return (
+                                <Pressable
+                                    key={value}
+                                    onPress={() => setColor(value)}
+                                    style={{
+                                        width: 30,
+                                        height: 30,
+                                        borderRadius: 6,
+                                        backgroundColor: value,
+                                        borderWidth: selected ? 2 : 1,
+                                        borderColor: selected ? colors.text : colors.border,
+                                    }}
+                                />
+                            );
+                        })}
+                        <Pressable
+                            onPress={() => setColor("")}
+                            style={{
+                                paddingHorizontal: 10,
+                                height: 30,
+                                borderRadius: 6,
+                                borderWidth: 1,
+                                borderColor: colors.border,
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}
+                        >
+                            <Text style={{ color: colors.text }}>Sin color</Text>
+                        </Pressable>
+                    </View>
+                </View>
+
+                {!primaryCalendarId ? (
+                    <Text style={{ color: colors.text }}>
+                        No hay calendarios disponibles para asignar este evento.
+                    </Text>
+                ) : null}
             </ScrollView>
         </>
     );

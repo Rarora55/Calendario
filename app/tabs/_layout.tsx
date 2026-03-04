@@ -1,11 +1,10 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { Link, Tabs } from "expo-router";
+import { router, Tabs } from "expo-router";
 import React from "react";
-import { Pressable } from "react-native";
+import { Alert, Pressable } from "react-native";
 
 import { useClientOnlyValue } from "@/components/useClientOnlyValue";
 import { useColorScheme } from "@/components/useColorScheme";
-import Colors from "@/constants/Colors";
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>["name"];
@@ -16,13 +15,20 @@ function TabBarIcon(props: {
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const inactiveIconColor = "#8A8F98";
+  const activeIconColor = "#FFFFFF";
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
+        tabBarActiveTintColor: activeIconColor,
+        tabBarInactiveTintColor: inactiveIconColor,
         headerShown: useClientOnlyValue(false, true),
         animation: "fade",
+        tabBarStyle: {
+          backgroundColor: colorScheme === "dark" ? "#111111" : "#1B1D22",
+          borderTopColor: "transparent",
+        },
       }}
     >
       <Tabs.Screen
@@ -31,18 +37,34 @@ export default function TabLayout() {
           title: "General",
           tabBarIcon: ({ color }) => <TabBarIcon name="calendar" color={color} />,
           headerRight: () => (
-            <Link href="/event-editor" asChild>
-              <Pressable style={{ paddingHorizontal: 12 }}>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="plus"
-                    size={22}
-                    color={Colors[colorScheme ?? "light"].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
+            <Pressable
+              style={{ paddingHorizontal: 12 }}
+              onPress={() =>
+                Alert.alert("Crear", "Selecciona el tipo:", [
+                  {
+                    text: "Crear grupo",
+                    onPress: () => router.push("/group-editor" as never),
+                  },
+                  {
+                    text: "Crear evento",
+                    onPress: () => router.push("/event-editor" as never),
+                  },
+                  {
+                    text: "Cancelar",
+                    style: "cancel",
+                  },
+                ])
+              }
+            >
+              {({ pressed }) => (
+                <FontAwesome
+                  name="plus"
+                  size={22}
+                  color={activeIconColor}
+                  style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
+                />
+              )}
+            </Pressable>
           ),
         }}
       />
@@ -50,12 +72,7 @@ export default function TabLayout() {
         name="calendars"
         options={{
           title: "Calendario",
-          tabBarIcon: () => (
-            <TabBarIcon
-              name="calendar-o"
-              color={colorScheme === "dark" ? "#ffffff" : "#111111"}
-            />
-          ),
+          tabBarIcon: ({ color }) => <TabBarIcon name="calendar-o" color={color} />,
         }}
       />
       <Tabs.Screen

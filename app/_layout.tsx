@@ -3,10 +3,11 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import AppLaunchScreen from '@/src/components/AppLaunchScreen';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -20,12 +21,14 @@ export const unstable_settings = {
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+const APP_LAUNCH_SCREEN_MS = 1600;
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     ...FontAwesome.font,
   });
+  const [showLaunchScreen, setShowLaunchScreen] = useState(true);
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -33,13 +36,22 @@ export default function RootLayout() {
   }, [error]);
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
+    if (!loaded) return;
+
+    void SplashScreen.hideAsync();
+    const timeoutId = setTimeout(() => {
+      setShowLaunchScreen(false);
+    }, APP_LAUNCH_SCREEN_MS);
+
+    return () => clearTimeout(timeoutId);
   }, [loaded]);
 
   if (!loaded) {
     return null;
+  }
+
+  if (showLaunchScreen) {
+    return <AppLaunchScreen />;
   }
 
   return <RootLayoutNav />;
@@ -56,6 +68,10 @@ function RootLayoutNav() {
         <Stack.Screen
           name="event-editor"
           options={{ title: "Crear Evento", presentation: "modal" }}
+        />
+        <Stack.Screen
+          name="group-editor"
+          options={{ title: "Crear Grupo", presentation: "modal" }}
         />
       </Stack>
     </ThemeProvider>

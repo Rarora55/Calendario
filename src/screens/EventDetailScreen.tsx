@@ -53,8 +53,8 @@ export default function EventDetailScreen() {
           {event.title}
         </Text>
         <Text style={{ color: colors.text }}>
-          <Text style={{ fontWeight: "700" }}>Etiqueta: </Text>
-          {event.label?.trim() ? event.label : "Sin etiqueta"}
+          <Text style={{ fontWeight: "700" }}>Grupo: </Text>
+          {event.label?.trim() ? event.label : "Sin grupo"}
         </Text>
         <Text style={{ color: colors.text }}>
           <Text style={{ fontWeight: "700" }}>Descripcion: </Text>
