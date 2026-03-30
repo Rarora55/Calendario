@@ -6,7 +6,8 @@ const TAB_ROUTES = [
   "/tabs",
   "/tabs/calendars",
   "/tabs/priorities",
-  "/tabs/bin",
+  "/tabs/timer",
+  "/tabs/reports",
   "/tabs/settings",
 ] as const;
 
@@ -17,7 +18,7 @@ const VELOCITY_THRESHOLD = 0.25;
 const AXIS_LOCK_DISTANCE = 12;
 const HORIZONTAL_DOMINANCE_RATIO = 1.2;
 
-function normalizeTabPath(pathname: string): TabRoute | null {
+export function normalizeTabPath(pathname: string): TabRoute | null {
   const cleaned = pathname.replace(/\/+$/, "");
 
   if (cleaned === "/tabs" || cleaned === "/tabs/index") {
@@ -31,7 +32,14 @@ function normalizeTabPath(pathname: string): TabRoute | null {
   return null;
 }
 
-function getTargetRoute(current: TabRoute, dx: number, vx: number): TabRoute | null {
+export function shouldHandleHorizontalGesture(dx: number, dy: number) {
+  const absDx = Math.abs(dx);
+  const absDy = Math.abs(dy);
+
+  return absDx > AXIS_LOCK_DISTANCE && absDx > absDy * HORIZONTAL_DOMINANCE_RATIO;
+}
+
+export function getTargetRoute(current: TabRoute, dx: number, vx: number): TabRoute | null {
   const index = TAB_ROUTES.indexOf(current);
   const wantsNext = dx <= -DISTANCE_THRESHOLD || vx <= -VELOCITY_THRESHOLD;
   const wantsPrevious = dx >= DISTANCE_THRESHOLD || vx >= VELOCITY_THRESHOLD;
@@ -54,20 +62,10 @@ export function useTabSwipeNavigation() {
   return useMemo(() => {
     const panResponder = PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        const absDx = Math.abs(gestureState.dx);
-        const absDy = Math.abs(gestureState.dy);
-        return (
-          absDx > AXIS_LOCK_DISTANCE &&
-          absDx > absDy * HORIZONTAL_DOMINANCE_RATIO
-        );
+        return shouldHandleHorizontalGesture(gestureState.dx, gestureState.dy);
       },
       onMoveShouldSetPanResponderCapture: (_, gestureState) => {
-        const absDx = Math.abs(gestureState.dx);
-        const absDy = Math.abs(gestureState.dy);
-        return (
-          absDx > AXIS_LOCK_DISTANCE &&
-          absDx > absDy * HORIZONTAL_DOMINANCE_RATIO
-        );
+        return shouldHandleHorizontalGesture(gestureState.dx, gestureState.dy);
       },
       onPanResponderRelease: (_, gestureState) => {
         const current = normalizeTabPath(pathname);

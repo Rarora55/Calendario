@@ -2,6 +2,10 @@ export type SyncStatus = "synced" | "pending_upsert" | "pending_delete";
 export type ThemePreference = "light" | "dark" | "system";
 export type WorkSessionSource = "timer" | "manual_adjustment";
 export type AuthProvider = "google";
+export type TimerStartBlockedReason = "selection_required" | "task_missing" | "active_timer_exists";
+export type DeleteBlockedReason = "active_timer_dependency";
+export type DeleteEntityType = "task" | "taskGroup";
+export type DeleteSourceScreen = "general" | "priority" | "timer";
 
 export type SyncedRecordEnvelope = {
   id: string;
@@ -62,6 +66,20 @@ export type AuthSession = {
   accessToken: string;
   refreshToken: string;
   expiresAt: string;
+};
+
+export type TimerStartResult =
+  | { ok: true; taskId: string }
+  | { ok: false; reason: TimerStartBlockedReason };
+
+export type DeleteActionResult =
+  | { ok: true }
+  | { ok: false; reason: DeleteBlockedReason };
+
+export type DeleteRequest = {
+  entityType: DeleteEntityType;
+  entityId: string;
+  sourceScreen: DeleteSourceScreen;
 };
 
 export type TaskReportState = "completed" | "in-progress" | "not-completed";

@@ -117,3 +117,13 @@ export async function upsertTask(task: TaskRecord) {
     ],
   );
 }
+
+export async function softDeleteTask(id: string, deletedAt = new Date().toISOString()) {
+  const database = await getDatabaseAdapter();
+  await database.runAsync(
+    `UPDATE tasks
+     SET deleted_at = ?, updated_at = ?, sync_status = 'pending_delete', last_synced_at = NULL
+     WHERE id = ? AND deleted_at IS NULL;`,
+    [deletedAt, deletedAt, id],
+  );
+}

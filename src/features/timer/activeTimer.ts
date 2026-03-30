@@ -14,3 +14,7 @@ export function calculateElapsedSeconds(timer: ActiveTimerSnapshot, endedAt = ne
   const diff = endedAt.getTime() - new Date(timer.startedAt).getTime();
   return Math.max(0, Math.round(diff / 1000));
 }
+
+export function isActiveTimerForTask(timer: ActiveTimerSnapshot | null, taskId: string) {
+  return timer?.taskId === taskId;
+}

@@ -1,15 +1,23 @@
 import { create } from "zustand";
 
 import { loadLegacyImportBundle } from "@/src/db/legacyImport";
-import { listTaskGroupSummaries, listTaskGroups, upsertTaskGroup } from "@/src/db/repositories/taskGroupRepository";
-import { getTaskById, listTasks, upsertTask } from "@/src/db/repositories/taskRepository";
+import {
+  listTaskGroupSummaries,
+  listTaskGroups,
+  softDeleteTaskGroupCascade,
+  upsertTaskGroup,
+} from "@/src/db/repositories/taskGroupRepository";
+import { getTaskById, listTasks, softDeleteTask, upsertTask } from "@/src/db/repositories/taskRepository";
 import { ensureUserPreferences, getUserPreferences, upsertUserPreferences } from "@/src/db/repositories/userPreferenceRepository";
 import { listWorkSessions, upsertWorkSession } from "@/src/db/repositories/workSessionRepository";
 import { calculateElapsedSeconds, createActiveTimer, type ActiveTimerSnapshot } from "@/src/features/timer/activeTimer";
+import { canDeleteTask, canDeleteTaskGroup } from "@/src/features/tasks/deleteGuards";
 import type {
+  DeleteActionResult,
   TaskGroupRecord,
   TaskGroupSummary,
   TaskRecord,
+  TimerStartResult,
   UserPreferenceRecord,
   WorkSessionRecord,
 } from "@/src/features/shared/types";
@@ -42,6 +50,7 @@ type AppState = {
   workSessions: WorkSessionRecord[];
   preferences: UserPreferenceRecord | null;
   activeTimer: ActiveTimerSnapshot | null;
+  selectedTimerTaskId: string | null;
   hydrate: () => Promise<void>;
   refresh: () => Promise<void>;
   createTaskGroup: (input: CreateTaskGroupInput) => Promise<void>;
@@ -50,15 +59,21 @@ type AppState = {
   updateTask: (id: string, input: CreateTaskInput) => Promise<void>;
   toggleTaskCompletion: (id: string) => Promise<void>;
   savePreferences: (patch: Partial<UserPreferenceRecord>) => Promise<void>;
-  startTimer: (taskId: string) => void;
+  selectTimerTask: (taskId: string | null) => void;
+  startTimer: () => TimerStartResult;
   stopTimer: () => Promise<void>;
+  deleteTask: (id: string) => Promise<DeleteActionResult>;
+  deleteTaskGroup: (id: string) => Promise<DeleteActionResult>;
 };
 
 function createId(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
 }
 
-async function refreshState(set: (partial: Partial<AppState>) => void) {
+async function refreshState(
+  set: (partial: Partial<AppState>) => void,
+  get: () => AppState,
+) {
   const [taskGroups, taskGroupSummaries, tasks, workSessions, preferences] = await Promise.all([
     listTaskGroups(),
     listTaskGroupSummaries(),
@@ -67,12 +82,18 @@ async function refreshState(set: (partial: Partial<AppState>) => void) {
     getUserPreferences(),
   ]);
 
+  const previousSelectedTaskId = get().selectedTimerTaskId;
+  const selectedTimerTaskId = previousSelectedTaskId && tasks.some((task) => task.id === previousSelectedTaskId)
+    ? previousSelectedTaskId
+    : null;
+
   set({
     taskGroups,
     taskGroupSummaries,
     tasks,
     workSessions,
     preferences,
+    selectedTimerTaskId,
     hydrated: true,
   });
 }
@@ -85,6 +106,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   workSessions: [],
   preferences: null,
   activeTimer: null,
+  selectedTimerTaskId: null,
   async hydrate() {
     await ensureUserPreferences();
     const legacyBundle = await loadLegacyImportBundle();
@@ -100,10 +122,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
     }
 
-    await refreshState(set);
+    await refreshState(set, get);
   },
   async refresh() {
-    await refreshState(set);
+    await refreshState(set, get);
   },
   async createTaskGroup(input) {
     const parsed = parseTaskGroupInput(input);
@@ -122,7 +144,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       lastSyncedAt: null,
     });
 
-    await refreshState(set);
+    await refreshState(set, get);
   },
   async updateTaskGroup(id, input) {
     const parsed = parseTaskGroupInput(input);
@@ -139,7 +161,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       syncStatus: "pending_upsert",
     });
 
-    await refreshState(set);
+    await refreshState(set, get);
   },
   async createTask(input) {
     const parsed = parseTaskInput(input);
@@ -165,7 +187,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       lastSyncedAt: null,
     });
 
-    await refreshState(set);
+    await refreshState(set, get);
   },
   async updateTask(id, input) {
     const parsed = parseTaskInput(input);
@@ -191,7 +213,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       syncStatus: "pending_upsert",
     });
 
-    await refreshState(set);
+    await refreshState(set, get);
   },
   async toggleTaskCompletion(id) {
     const existing = await getTaskById(id);
@@ -208,7 +230,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       syncStatus: "pending_upsert",
     });
 
-    await refreshState(set);
+    await refreshState(set, get);
   },
   async savePreferences(patch) {
     const current = (await getUserPreferences()) ?? (await ensureUserPreferences());
@@ -219,10 +241,33 @@ export const useAppStore = create<AppState>((set, get) => ({
       syncStatus: "pending_upsert",
     });
 
-    await refreshState(set);
+    await refreshState(set, get);
   },
-  startTimer(taskId) {
-    set({ activeTimer: createActiveTimer(taskId) });
+  selectTimerTask(taskId) {
+    if (get().activeTimer) {
+      return;
+    }
+
+    set({ selectedTimerTaskId: taskId });
+  },
+  startTimer() {
+    if (get().activeTimer) {
+      return { ok: false, reason: "active_timer_exists" };
+    }
+
+    const selectedTaskId = get().selectedTimerTaskId;
+    if (!selectedTaskId) {
+      return { ok: false, reason: "selection_required" };
+    }
+
+    const selectedTask = get().tasks.find((task) => task.id === selectedTaskId);
+    if (!selectedTask) {
+      set({ selectedTimerTaskId: null });
+      return { ok: false, reason: "task_missing" };
+    }
+
+    set({ activeTimer: createActiveTimer(selectedTaskId) });
+    return { ok: true, taskId: selectedTaskId };
   },
   async stopTimer() {
     const timer = get().activeTimer;
@@ -249,6 +294,35 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
 
     set({ activeTimer: null });
-    await refreshState(set);
+    await refreshState(set, get);
+  },
+  async deleteTask(id) {
+    const guard = canDeleteTask(id, get().activeTimer);
+    if (!guard.ok) {
+      return guard;
+    }
+
+    await softDeleteTask(id);
+
+    const selectedTimerTaskId = get().selectedTimerTaskId === id ? null : get().selectedTimerTaskId;
+    set({ selectedTimerTaskId });
+    await refreshState(set, get);
+    return { ok: true };
+  },
+  async deleteTaskGroup(id) {
+    const guard = canDeleteTaskGroup(id, get().tasks, get().activeTimer);
+    if (!guard.ok) {
+      return guard;
+    }
+
+    const selectedTask = get().tasks.find((task) => task.id === get().selectedTimerTaskId);
+    await softDeleteTaskGroupCascade(id);
+
+    if (selectedTask?.taskGroupId === id) {
+      set({ selectedTimerTaskId: null });
+    }
+
+    await refreshState(set, get);
+    return { ok: true };
   },
 }));

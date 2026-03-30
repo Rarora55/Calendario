@@ -1,11 +1,10 @@
-import { useColorScheme } from "@/components/useColorScheme";
-import Colors from "@/constants/Colors";
 import { useEffect, useRef } from "react";
 import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 
+import { useAppTheme } from "@/src/theme/useAppTheme";
+
 export default function AppLaunchScreen() {
-    const colorScheme = useColorScheme() ?? "light";
-    const colors = Colors[colorScheme];
+    const { colors } = useAppTheme();
     const logoOpacity = useRef(new Animated.Value(0)).current;
     const logoScale = useRef(new Animated.Value(0.9)).current;
     const glowOpacity = useRef(new Animated.Value(0.15)).current;
@@ -73,7 +72,7 @@ export default function AppLaunchScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <Animated.View style={[styles.glow, { opacity: glowOpacity }]} />
+            <Animated.View style={[styles.glow, { backgroundColor: colors.primary, opacity: glowOpacity }]} />
             <Animated.Image
                 source={require("../../assets/images/icon.png")}
                 style={[
@@ -102,7 +101,6 @@ const styles = StyleSheet.create({
         width: 200,
         height: 200,
         borderRadius: 100,
-        backgroundColor: "#4f46e5",
     },
     logo: {
         width: 120,

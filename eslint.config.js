@@ -39,6 +39,8 @@ module.exports = [
       globals: {
         console: "readonly",
         fetch: "readonly",
+        window: "readonly",
+        global: "readonly",
         process: "readonly",
         module: "readonly",
         require: "readonly",
@@ -47,6 +49,14 @@ module.exports = [
         clearTimeout: "readonly",
         URL: "readonly",
         jest: "readonly",
+        describe: "readonly",
+        it: "readonly",
+        test: "readonly",
+        expect: "readonly",
+        beforeEach: "readonly",
+        afterEach: "readonly",
+        beforeAll: "readonly",
+        afterAll: "readonly",
       },
     },
     plugins: {

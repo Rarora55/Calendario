@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
 import { getMonthTaskCounts } from "@/src/features/calendar/monthCounts";
+import { useTabSwipeNavigation } from "@/src/hooks/useTabSwipeNavigation";
 import { useAppStore } from "@/src/state/store";
+import { useAppTheme } from "@/src/theme/useAppTheme";
 
 const dayLabels = ["M", "T", "W", "T", "F", "S", "S"];
 const monthLabels = [
@@ -50,6 +52,8 @@ export default function CalendarScreen() {
   const hydrate = useAppStore((state) => state.hydrate);
   const tasks = useAppStore((state) => state.tasks);
   const [monthDate, setMonthDate] = useState(() => new Date());
+  const { colors } = useAppTheme();
+  const panHandlers = useTabSwipeNavigation();
 
   useEffect(() => {
     if (!hydrated) {
@@ -61,24 +65,24 @@ export default function CalendarScreen() {
   const matrix = useMemo(() => getMonthMatrix(monthDate), [monthDate]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff9f2", padding: 18, gap: 18 }}>
+    <View {...panHandlers} style={{ flex: 1, backgroundColor: colors.background, padding: 18, gap: 18 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Pressable onPress={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1))}>
-          <Text style={{ color: "#35291f", fontWeight: "700" }}>Prev</Text>
+          <Text style={{ color: colors.text, fontWeight: "700" }}>Prev</Text>
         </Pressable>
-        <Text style={{ fontSize: 24, fontWeight: "800", color: "#35291f" }}>
+        <Text style={{ fontSize: 24, fontWeight: "800", color: colors.text }}>
           {monthLabels[monthDate.getMonth()]} {monthDate.getFullYear()}
         </Text>
         <Pressable onPress={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1))}>
-          <Text style={{ color: "#35291f", fontWeight: "700" }}>Next</Text>
+          <Text style={{ color: colors.text, fontWeight: "700" }}>Next</Text>
         </Pressable>
       </View>
 
-      <View style={{ backgroundColor: "#ffffff", borderRadius: 24, padding: 12, borderWidth: 1, borderColor: "#dfd2c4" }}>
+      <View style={{ backgroundColor: colors.card, borderRadius: 24, padding: 12, borderWidth: 1, borderColor: colors.border }}>
         <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-          {dayLabels.map((label) => (
-            <View key={label} style={{ width: "14.28%", paddingVertical: 6 }}>
-              <Text style={{ textAlign: "center", color: "#6c5a4c", fontWeight: "700" }}>{label}</Text>
+          {dayLabels.map((label, index) => (
+            <View key={`day-label-${index}-${label}`} style={{ width: "14.28%", paddingVertical: 6 }}>
+              <Text style={{ textAlign: "center", color: colors.textMuted, fontWeight: "700" }}>{label}</Text>
             </View>
           ))}
           {matrix.map((date, index) => {
@@ -96,12 +100,12 @@ export default function CalendarScreen() {
                     borderRadius: 18,
                     justifyContent: "center",
                     alignItems: "center",
-                    backgroundColor: count > 0 ? "#de8f6e" : "#f4ede4",
+                    backgroundColor: count > 0 ? colors.primary : colors.surfaceMuted,
                   }}
                 >
-                  <Text style={{ color: count > 0 ? "#ffffff" : "#35291f", fontWeight: "700" }}>{date.getDate()}</Text>
+                  <Text style={{ color: count > 0 ? "#ffffff" : colors.text, fontWeight: "700" }}>{date.getDate()}</Text>
                 </View>
-                <Text style={{ color: "#6c5a4c", fontSize: 12 }}>{count > 0 ? `${count} tasks` : ""}</Text>
+                <Text style={{ color: colors.textMuted, fontSize: 12 }}>{count > 0 ? `${count} tasks` : ""}</Text>
               </View>
             );
           })}

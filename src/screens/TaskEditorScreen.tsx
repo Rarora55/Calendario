@@ -3,16 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { useAppStore } from "@/src/state/store";
-
-const inputStyle = {
-  borderWidth: 1,
-  borderColor: "#dfd2c4",
-  borderRadius: 16,
-  paddingHorizontal: 14,
-  paddingVertical: 12,
-  backgroundColor: "#ffffff",
-  color: "#35291f",
-} as const;
+import { useAppTheme } from "@/src/theme/useAppTheme";
 
 export default function TaskEditorScreen() {
   const { id, taskGroupId } = useLocalSearchParams<{ id?: string; taskGroupId?: string }>();
@@ -22,6 +13,17 @@ export default function TaskEditorScreen() {
   const tasks = useAppStore((state) => state.tasks);
   const createTask = useAppStore((state) => state.createTask);
   const updateTask = useAppStore((state) => state.updateTask);
+  const { colors } = useAppTheme();
+
+  const inputStyle = {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: colors.card,
+    color: colors.text,
+  } as const;
 
   const existingTask = useMemo(() => tasks.find((task) => task.id === id), [id, tasks]);
   const [selectedGroupId, setSelectedGroupId] = useState(taskGroupId ?? "");
@@ -79,13 +81,13 @@ export default function TaskEditorScreen() {
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: "#fff9f2" }} contentContainerStyle={{ padding: 18, gap: 18 }}>
-      <Text style={{ fontSize: 28, fontWeight: "800", color: "#35291f" }}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 18, gap: 18 }}>
+      <Text style={{ fontSize: 28, fontWeight: "800", color: colors.text }}>
         {existingTask ? "Edit Task" : "Create Task"}
       </Text>
 
       <View style={{ gap: 10 }}>
-        <Text style={{ color: "#35291f", fontWeight: "700" }}>Task Group</Text>
+        <Text style={{ color: colors.text, fontWeight: "700" }}>Task Group</Text>
         <View style={{ gap: 10 }}>
           {taskGroups.map((group) => (
             <Pressable
@@ -94,46 +96,46 @@ export default function TaskEditorScreen() {
               style={{
                 borderRadius: 14,
                 borderWidth: 1,
-                borderColor: selectedGroupId === group.id ? "#35291f" : "#dfd2c4",
-                backgroundColor: selectedGroupId === group.id ? "#f4ede4" : "#ffffff",
+                borderColor: selectedGroupId === group.id ? colors.text : colors.border,
+                backgroundColor: selectedGroupId === group.id ? colors.surfaceMuted : colors.card,
                 padding: 12,
               }}
             >
-              <Text style={{ color: "#35291f", fontWeight: "600" }}>{group.name}</Text>
+              <Text style={{ color: colors.text, fontWeight: "600" }}>{group.name}</Text>
             </Pressable>
           ))}
         </View>
       </View>
 
       <View style={{ gap: 10 }}>
-        <Text style={{ color: "#35291f", fontWeight: "700" }}>Title</Text>
-        <TextInput value={title} onChangeText={setTitle} style={inputStyle} placeholder="Prepare sprint summary" placeholderTextColor="#9f8f81" />
+        <Text style={{ color: colors.text, fontWeight: "700" }}>Title</Text>
+        <TextInput value={title} onChangeText={setTitle} style={inputStyle} placeholder="Prepare sprint summary" placeholderTextColor={colors.textMuted} />
       </View>
 
       <View style={{ gap: 10 }}>
-        <Text style={{ color: "#35291f", fontWeight: "700" }}>Notes</Text>
-        <TextInput value={notes} onChangeText={setNotes} multiline style={[inputStyle, { minHeight: 120, textAlignVertical: "top" }]} placeholder="Optional context" placeholderTextColor="#9f8f81" />
+        <Text style={{ color: colors.text, fontWeight: "700" }}>Notes</Text>
+        <TextInput value={notes} onChangeText={setNotes} multiline style={[inputStyle, { minHeight: 120, textAlignVertical: "top" }]} placeholder="Optional context" placeholderTextColor={colors.textMuted} />
       </View>
 
       <View style={{ flexDirection: "row", gap: 12 }}>
         <View style={{ flex: 1, gap: 10 }}>
-          <Text style={{ color: "#35291f", fontWeight: "700" }}>Value</Text>
+          <Text style={{ color: colors.text, fontWeight: "700" }}>Value</Text>
           <TextInput value={value} onChangeText={setValue} keyboardType="numeric" style={inputStyle} />
         </View>
         <View style={{ flex: 1, gap: 10 }}>
-          <Text style={{ color: "#35291f", fontWeight: "700" }}>Est. Minutes</Text>
+          <Text style={{ color: colors.text, fontWeight: "700" }}>Est. Minutes</Text>
           <TextInput value={estimatedMinutes} onChangeText={setEstimatedMinutes} keyboardType="numeric" style={inputStyle} />
         </View>
       </View>
 
       <View style={{ flexDirection: "row", gap: 12 }}>
         <View style={{ flex: 1, gap: 10 }}>
-          <Text style={{ color: "#35291f", fontWeight: "700" }}>Start Date</Text>
-          <TextInput value={scheduledStartDate} onChangeText={setScheduledStartDate} style={inputStyle} placeholder="YYYY-MM-DD" placeholderTextColor="#9f8f81" />
+          <Text style={{ color: colors.text, fontWeight: "700" }}>Start Date</Text>
+          <TextInput value={scheduledStartDate} onChangeText={setScheduledStartDate} style={inputStyle} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
         </View>
         <View style={{ flex: 1, gap: 10 }}>
-          <Text style={{ color: "#35291f", fontWeight: "700" }}>End Date</Text>
-          <TextInput value={scheduledEndDate} onChangeText={setScheduledEndDate} style={inputStyle} placeholder="YYYY-MM-DD" placeholderTextColor="#9f8f81" />
+          <Text style={{ color: colors.text, fontWeight: "700" }}>End Date</Text>
+          <TextInput value={scheduledEndDate} onChangeText={setScheduledEndDate} style={inputStyle} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
         </View>
       </View>
 
@@ -141,12 +143,12 @@ export default function TaskEditorScreen() {
         onPress={() => setIsPriority((current) => !current)}
         style={{
           borderRadius: 16,
-          backgroundColor: isPriority ? "#35291f" : "#f4ede4",
+          backgroundColor: isPriority ? colors.text : colors.surfaceMuted,
           paddingVertical: 14,
           alignItems: "center",
         }}
       >
-        <Text style={{ color: isPriority ? "#fff9f2" : "#35291f", fontWeight: "700" }}>
+        <Text style={{ color: isPriority ? colors.background : colors.text, fontWeight: "700" }}>
           {isPriority ? "Priority Enabled" : "Mark as Priority"}
         </Text>
       </Pressable>
@@ -155,7 +157,7 @@ export default function TaskEditorScreen() {
         onPress={() => void handleSave()}
         style={{
           borderRadius: 16,
-          backgroundColor: "#de8f6e",
+          backgroundColor: colors.primary,
           paddingVertical: 14,
           alignItems: "center",
         }}

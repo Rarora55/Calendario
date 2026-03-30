@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
 import { useAppStore } from "@/src/state/store";
+import { useAppTheme } from "@/src/theme/useAppTheme";
 
 const colorOptions = ["#de8f6e", "#8ab7aa", "#d7a45e", "#cf7d70", "#8c9fd6"];
 
@@ -13,6 +14,7 @@ export default function TaskGroupEditorScreen() {
   const taskGroups = useAppStore((state) => state.taskGroups);
   const createTaskGroup = useAppStore((state) => state.createTaskGroup);
   const updateTaskGroup = useAppStore((state) => state.updateTaskGroup);
+  const { colors } = useAppTheme();
 
   const existingGroup = useMemo(() => taskGroups.find((group) => group.id === id), [id, taskGroups]);
   const [name, setName] = useState("");
@@ -44,31 +46,32 @@ export default function TaskGroupEditorScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff9f2", padding: 18, gap: 18 }}>
-      <Text style={{ fontSize: 28, fontWeight: "800", color: "#35291f" }}>
+    <View style={{ flex: 1, backgroundColor: colors.background, padding: 18, gap: 18 }}>
+      <Text style={{ fontSize: 28, fontWeight: "800", color: colors.text }}>
         {existingGroup ? "Edit Task Group" : "Create Task Group"}
       </Text>
 
       <View style={{ gap: 10 }}>
-        <Text style={{ color: "#35291f", fontWeight: "700" }}>Name</Text>
+        <Text style={{ color: colors.text, fontWeight: "700" }}>Name</Text>
         <TextInput
           value={name}
           onChangeText={setName}
           placeholder="Client work, School, Personal..."
-          placeholderTextColor="#9f8f81"
+          placeholderTextColor={colors.textMuted}
           style={{
             borderWidth: 1,
-            borderColor: "#dfd2c4",
+            borderColor: colors.border,
             borderRadius: 16,
             paddingHorizontal: 14,
             paddingVertical: 12,
-            backgroundColor: "#ffffff",
+            backgroundColor: colors.card,
+            color: colors.text,
           }}
         />
       </View>
 
       <View style={{ gap: 10 }}>
-        <Text style={{ color: "#35291f", fontWeight: "700" }}>Color</Text>
+        <Text style={{ color: colors.text, fontWeight: "700" }}>Color</Text>
         <View style={{ flexDirection: "row", gap: 12, flexWrap: "wrap" }}>
           {colorOptions.map((candidate) => (
             <Pressable
@@ -80,7 +83,7 @@ export default function TaskGroupEditorScreen() {
                 borderRadius: 24,
                 backgroundColor: candidate,
                 borderWidth: colorToken === candidate ? 3 : 0,
-                borderColor: "#35291f",
+                borderColor: colors.text,
               }}
             />
           ))}
@@ -92,12 +95,12 @@ export default function TaskGroupEditorScreen() {
         style={{
           marginTop: "auto",
           borderRadius: 16,
-          backgroundColor: "#35291f",
+          backgroundColor: colors.text,
           paddingVertical: 14,
           alignItems: "center",
         }}
       >
-        <Text style={{ color: "#fff9f2", fontWeight: "700", fontSize: 16 }}>Save Group</Text>
+        <Text style={{ color: colors.background, fontWeight: "700", fontSize: 16 }}>Save Group</Text>
       </Pressable>
     </View>
   );

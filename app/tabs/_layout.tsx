@@ -4,6 +4,7 @@ import React from "react";
 import { Pressable } from "react-native";
 
 import { useClientOnlyValue } from "@/components/useClientOnlyValue";
+import { useAppTheme } from "@/src/theme/useAppTheme";
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>["name"];
@@ -13,8 +14,9 @@ function TabBarIcon(props: {
 }
 
 export default function TabLayout() {
-  const inactiveIconColor = "#8A8F98";
-  const activeIconColor = "#35291F";
+  const { colors } = useAppTheme();
+  const inactiveIconColor = colors.textMuted;
+  const activeIconColor = colors.text;
 
   return (
     <Tabs
@@ -24,12 +26,12 @@ export default function TabLayout() {
         headerShown: useClientOnlyValue(false, true),
         animation: "fade",
         headerStyle: {
-          backgroundColor: "#FFF9F2",
+          backgroundColor: colors.background,
         },
-        headerTintColor: "#35291F",
+        headerTintColor: colors.text,
         tabBarStyle: {
-          backgroundColor: "#F4EDE4",
-          borderTopColor: "#DFD2C4",
+          backgroundColor: colors.surfaceMuted,
+          borderTopColor: colors.border,
           height: 72,
         },
       }}

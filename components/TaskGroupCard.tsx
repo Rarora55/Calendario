@@ -1,15 +1,19 @@
+import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Pressable, Text, View } from "react-native";
 
-import type { TaskGroupSummary, TaskRecord } from "@/src/features/shared/types";
 import { TaskRow } from "@/components/TaskRow";
+import type { TaskGroupSummary, TaskRecord } from "@/src/features/shared/types";
+import { useAppTheme } from "@/src/theme/useAppTheme";
 
 type TaskGroupCardProps = {
   summary: TaskGroupSummary;
   tasks: TaskRecord[];
   onEditGroup: () => void;
+  onDeleteGroup: () => void;
   onAddTask: () => void;
   onEditTask: (taskId: string) => void;
   onToggleTask: (taskId: string) => void;
+  onDeleteTask: (taskId: string) => void;
 };
 
 function formatDuration(seconds: number) {
@@ -26,19 +30,23 @@ export function TaskGroupCard({
   summary,
   tasks,
   onEditGroup,
+  onDeleteGroup,
   onAddTask,
   onEditTask,
   onToggleTask,
+  onDeleteTask,
 }: TaskGroupCardProps) {
+  const { colors } = useAppTheme();
+
   return (
     <View
       style={{
         borderRadius: 24,
         padding: 18,
         gap: 14,
-        backgroundColor: "#ffffff",
+        backgroundColor: colors.card,
         borderWidth: 1,
-        borderColor: "#dfd2c4",
+        borderColor: colors.border,
       }}
     >
       <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
@@ -52,45 +60,62 @@ export function TaskGroupCard({
                 backgroundColor: summary.colorToken,
               }}
             />
-            <Text style={{ fontSize: 22, fontWeight: "700", color: "#35291f" }}>{summary.name}</Text>
+            <Text style={{ fontSize: 22, fontWeight: "700", color: colors.text }}>{summary.name}</Text>
           </View>
-          <Text style={{ color: "#6c5a4c" }}>
-            {summary.taskCount} tasks · Value {summary.totalValue} · Estimated {formatDuration(summary.totalEstimatedTimeSeconds)}
+          <Text style={{ color: colors.textMuted }}>
+            {summary.taskCount} tasks - Value {summary.totalValue} - Estimated {formatDuration(summary.totalEstimatedTimeSeconds)}
           </Text>
           {summary.dateSpanStart && summary.dateSpanEnd ? (
-            <Text style={{ color: "#6c5a4c" }}>
+            <Text style={{ color: colors.textMuted }}>
               Span {summary.dateSpanStart} to {summary.dateSpanEnd}
             </Text>
           ) : null}
         </View>
 
-        <Pressable
-          onPress={onEditGroup}
-          style={{
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: "#dfd2c4",
-            paddingHorizontal: 14,
-            paddingVertical: 10,
-            alignSelf: "flex-start",
-          }}
-        >
-          <Text style={{ color: "#35291f", fontWeight: "600" }}>Edit Group</Text>
-        </Pressable>
+        <View style={{ flexDirection: "row", gap: 10, alignSelf: "flex-start" }}>
+          <Pressable
+            accessibilityLabel={`Delete group ${summary.name}`}
+            onPress={onDeleteGroup}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              borderWidth: 1,
+              borderColor: colors.border,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <FontAwesome color={colors.textMuted} name="trash-o" size={16} />
+          </Pressable>
+          <Pressable
+            onPress={onEditGroup}
+            style={{
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: colors.border,
+              paddingHorizontal: 14,
+              paddingVertical: 10,
+              alignSelf: "flex-start",
+            }}
+          >
+            <Text style={{ color: colors.text, fontWeight: "600" }}>Edit Group</Text>
+          </Pressable>
+        </View>
       </View>
 
       <View
         style={{
-          backgroundColor: "#f4ede4",
+          backgroundColor: colors.surfaceMuted,
           borderRadius: 18,
           padding: 12,
           gap: 6,
         }}
       >
-        <Text style={{ color: "#35291f", fontWeight: "600" }}>
-          Completed {summary.progressStateSummary.completed} · In Progress {summary.progressStateSummary.inProgress} · Planned {summary.progressStateSummary.notCompleted}
+        <Text style={{ color: colors.text, fontWeight: "600" }}>
+          Completed {summary.progressStateSummary.completed} - In Progress {summary.progressStateSummary.inProgress} - Planned {summary.progressStateSummary.notCompleted}
         </Text>
-        <Text style={{ color: "#6c5a4c" }}>
+        <Text style={{ color: colors.textMuted }}>
           Worked {formatDuration(summary.totalWorkedTimeSeconds)}
         </Text>
       </View>
@@ -99,12 +124,12 @@ export function TaskGroupCard({
         onPress={onAddTask}
         style={{
           borderRadius: 14,
-          backgroundColor: "#35291f",
+          backgroundColor: colors.text,
           paddingVertical: 12,
           alignItems: "center",
         }}
       >
-        <Text style={{ color: "#fff9f2", fontWeight: "700" }}>Add Task</Text>
+        <Text style={{ color: colors.background, fontWeight: "700" }}>Add Task</Text>
       </Pressable>
 
       <View style={{ gap: 10 }}>
@@ -115,10 +140,11 @@ export function TaskGroupCard({
               task={task}
               onEdit={() => onEditTask(task.id)}
               onToggleComplete={() => onToggleTask(task.id)}
+              onDelete={() => onDeleteTask(task.id)}
             />
           ))
         ) : (
-          <Text style={{ color: "#6c5a4c" }}>No tasks in this group yet.</Text>
+          <Text style={{ color: colors.textMuted }}>No tasks in this group yet.</Text>
         )}
       </View>
     </View>

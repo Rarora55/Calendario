@@ -1,5 +1,6 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { ThemeProvider } from "@react-navigation/native";
+import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -7,7 +8,9 @@ import { useEffect, useMemo, useState } from "react";
 import "react-native-reanimated";
 
 import AppLaunchScreen from "@/src/components/AppLaunchScreen";
+import { useAppStore } from "@/src/state/store";
 import { createNavigationTheme } from "@/src/theme/themes";
+import { useAppTheme } from "@/src/theme/useAppTheme";
 
 export { ErrorBoundary } from "expo-router";
 
@@ -24,12 +27,22 @@ export default function RootLayout() {
     ...FontAwesome.font,
   });
   const [showLaunchScreen, setShowLaunchScreen] = useState(true);
+  const hydrated = useAppStore((state) => state.hydrated);
+  const hydrate = useAppStore((state) => state.hydrate);
 
   useEffect(() => {
     if (error) {
       throw error;
     }
   }, [error]);
+
+  useEffect(() => {
+    if (!loaded || hydrated) {
+      return;
+    }
+
+    void hydrate();
+  }, [hydrate, hydrated, loaded]);
 
   useEffect(() => {
     if (!loaded) {
@@ -48,7 +61,7 @@ export default function RootLayout() {
     return null;
   }
 
-  if (showLaunchScreen) {
+  if (showLaunchScreen || !hydrated) {
     return <AppLaunchScreen />;
   }
 
@@ -56,11 +69,12 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const [mode] = useState<"light" | "dark">("light");
+  const { mode } = useAppTheme();
   const navigationTheme = useMemo(() => createNavigationTheme(mode), [mode]);
 
   return (
     <ThemeProvider value={navigationTheme}>
+      <StatusBar style={mode === "dark" ? "light" : "dark"} />
       <Stack>
         <Stack.Screen name="tabs" options={{ headerShown: false }} />
         <Stack.Screen

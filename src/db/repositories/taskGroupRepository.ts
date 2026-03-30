@@ -91,6 +91,25 @@ export async function upsertTaskGroup(taskGroup: TaskGroupRecord) {
   );
 }
 
+export async function softDeleteTaskGroupCascade(id: string, deletedAt = new Date().toISOString()) {
+  const database = await getDatabaseAdapter();
+  await database.withTransactionAsync(async () => {
+    await database.runAsync(
+      `UPDATE task_groups
+       SET deleted_at = ?, updated_at = ?, sync_status = 'pending_delete', last_synced_at = NULL
+       WHERE id = ? AND deleted_at IS NULL;`,
+      [deletedAt, deletedAt, id],
+    );
+
+    await database.runAsync(
+      `UPDATE tasks
+       SET deleted_at = ?, updated_at = ?, sync_status = 'pending_delete', last_synced_at = NULL
+       WHERE task_group_id = ? AND deleted_at IS NULL;`,
+      [deletedAt, deletedAt, id],
+    );
+  });
+}
+
 export async function listTaskGroupSummaries() {
   const database = await getDatabaseAdapter();
   const [rows, taskRows] = await Promise.all([
