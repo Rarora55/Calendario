@@ -1,89 +1,51 @@
-import EventCard from "@/components/EventCard";
-import { CalendarEvent } from "@/src/domain/Event";
-import { useTabSwipeNavigation } from "@/src/hooks/useTabSwipeNavigation";
-import { useAppStore } from "@/src/state/store";
-import { useTheme } from "@react-navigation/native";
-import { router } from "expo-router";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { ScrollView, Text, View } from "react-native";
 
+import { TaskRow } from "@/components/TaskRow";
+import { selectPriorityTasks } from "@/src/features/priority/selectors";
+import { useAppStore } from "@/src/state/store";
+
 export default function PrioritiesScreen() {
-    const { colors } = useTheme();
-    const swipeHandlers = useTabSwipeNavigation();
-    const hydrated = useAppStore((s) => s.hydrated);
-    const hydrate = useAppStore((s) => s.hydrate);
-    const calendars = useAppStore((s) => s.calendars);
-    const events = useAppStore((s) => s.events as CalendarEvent[]);
+  const hydrated = useAppStore((state) => state.hydrated);
+  const hydrate = useAppStore((state) => state.hydrate);
+  const tasks = useAppStore((state) => state.tasks);
+  const preferences = useAppStore((state) => state.preferences);
+  const toggleTaskCompletion = useAppStore((state) => state.toggleTaskCompletion);
 
-    useEffect(() => {
-        if (!hydrated) void hydrate();
-    }, [hydrated, hydrate]);
-
-    const highPriorityEvents = useMemo(() => {
-        const visibleIds = new Set(
-            calendars.filter((c: any) => c.isVisible).map((c: any) => c.id)
-        );
-
-        return events
-            .filter((e: CalendarEvent) => visibleIds.has(e.calendarId))
-            .filter((e: CalendarEvent) => e.priority === "alta")
-            .slice()
-            .sort((a: CalendarEvent, b: CalendarEvent) =>
-                a.startISO.localeCompare(b.startISO)
-            );
-    }, [calendars, events]);
-
-    const calendarById = useMemo(() => {
-        return new Map(calendars.map((c: any) => [c.id, c]));
-    }, [calendars]);
-
+  useEffect(() => {
     if (!hydrated) {
-        return (
-            <View
-                {...swipeHandlers}
-                style={{ flex: 1, padding: 16, backgroundColor: colors.background }}
-            >
-                <Text style={{ color: colors.text }}>Cargando...</Text>
-            </View>
-        );
+      void hydrate();
     }
+  }, [hydrate, hydrated]);
 
-    return (
-        <View
-            {...swipeHandlers}
-            style={{ flex: 1, padding: 16, gap: 12, backgroundColor: colors.background }}
-        >
-            <Text style={{ fontSize: 24, fontWeight: "700", color: colors.text }}>
-                Prioridades
-            </Text>
+  const prioritizedTasks = selectPriorityTasks(tasks, preferences?.urgencyWindowDays ?? 3);
 
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 12, paddingBottom: 12 }}>
-                {highPriorityEvents.length ? (
-                    highPriorityEvents.map((e: CalendarEvent) => {
-                        const cal = calendarById.get(e.calendarId);
-                        const eventColor = e.color ?? (cal as { color?: string } | undefined)?.color;
-                        return (
-                            <EventCard
-                                key={e.id}
-                                title={e.title}
-                                subtitle={new Date(e.startISO).toLocaleString()}
-                                color={eventColor}
-                                textColor={colors.text}
-                                subtitleColor={colors.text}
-                                borderColor={colors.border}
-                                actionLabel="Ver"
-                                onActionPress={() =>
-                                    router.push({ pathname: "/event/[id]", params: { id: e.id } })
-                                }
-                            />
-                        );
-                    })
-                ) : (
-                    <Text style={{ color: colors.text, opacity: 0.7 }}>
-                        No hay eventos con prioridad alta.
-                    </Text>
-                )}
-            </ScrollView>
+  return (
+    <ScrollView style={{ flex: 1, backgroundColor: "#fff9f2" }} contentContainerStyle={{ padding: 18, gap: 14 }}>
+      <View style={{ gap: 8 }}>
+        <Text style={{ fontSize: 28, fontWeight: "800", color: "#35291f" }}>Priority</Text>
+        <Text style={{ color: "#6c5a4c" }}>
+          Tasks shown here are overdue, within the urgency window, or explicitly marked as priority.
+        </Text>
+      </View>
+
+      {prioritizedTasks.length ? (
+        prioritizedTasks.map((task) => (
+          <TaskRow
+            key={task.id}
+            task={task}
+            onEdit={() => {}}
+            onToggleComplete={() => void toggleTaskCompletion(task.id)}
+          />
+        ))
+      ) : (
+        <View style={{ padding: 20, borderRadius: 24, backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#dfd2c4" }}>
+          <Text style={{ color: "#35291f", fontWeight: "700", marginBottom: 6 }}>Nothing urgent right now</Text>
+          <Text style={{ color: "#6c5a4c" }}>
+            This view will populate as tasks become urgent or marked as high-priority work.
+          </Text>
         </View>
-    );
+      )}
+    </ScrollView>
+  );
 }

@@ -1,0 +1,28 @@
+export const themeTokens = {
+  light: {
+    background: "#fff9f2",
+    card: "#ffffff",
+    surfaceMuted: "#f4ede4",
+    border: "#dfd2c4",
+    text: "#35291f",
+    textMuted: "#6c5a4c",
+    primary: "#de8f6e",
+    accent: "#8ab7aa",
+    success: "#79a88f",
+    warning: "#d7a45e",
+    danger: "#cf7d70",
+  },
+  dark: {
+    background: "#241c18",
+    card: "#302621",
+    surfaceMuted: "#3c3029",
+    border: "#5a4b40",
+    text: "#f5ede4",
+    textMuted: "#ccbcae",
+    primary: "#f0a07b",
+    accent: "#93c3b4",
+    success: "#8ec2a2",
+    warning: "#f0be72",
+    danger: "#ee9787",
+  },
+} as const;

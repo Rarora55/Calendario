@@ -1,9 +1,5 @@
-import { Text, View } from "react-native";
+import { Redirect } from "expo-router";
 
 export default function DayScreen() {
-    return (
-        <View style={{ flex: 1, padding: 16 }}>
-            <Text style={{ fontSize: 24, fontWeight: "700" }}>Vista Día</Text>
-        </View>
-    );
+  return <Redirect href="/tabs/calendars" />;
 }

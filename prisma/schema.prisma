@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum WorkSessionSource {
+  timer
+  manual_adjustment
+}
+
+model TaskGroup {
+  id         String   @id
+  userId     String
+  name       String
+  colorToken String
+  sortOrder  Int
+  createdAt  DateTime
+  updatedAt  DateTime
+  deletedAt  DateTime?
+  tasks      Task[]
+
+  @@unique([userId, name])
+  @@index([userId, updatedAt])
+  @@index([userId, deletedAt])
+  @@map("task_groups")
+}
+
+model Task {
+  id                   String        @id
+  userId               String
+  taskGroupId          String
+  title                String
+  notes                String?
+  value                Int
+  estimatedTimeSeconds Int
+  workedTimeSeconds    Int
+  scheduledStartDate   String?
+  scheduledEndDate     String?
+  isCompleted          Boolean
+  completedAt          DateTime?
+  isPriority           Boolean
+  createdAt            DateTime
+  updatedAt            DateTime
+  deletedAt            DateTime?
+  taskGroup            TaskGroup     @relation(fields: [taskGroupId], references: [id], onDelete: Restrict)
+  workSessions         WorkSession[]
+
+  @@index([userId, taskGroupId])
+  @@index([userId, updatedAt])
+  @@index([userId, deletedAt])
+  @@map("tasks")
+}
+
+model WorkSession {
+  id              String            @id
+  userId          String
+  taskId          String
+  startedAt       DateTime
+  endedAt         DateTime
+  durationSeconds Int
+  source          WorkSessionSource
+  createdAt       DateTime
+  updatedAt       DateTime
+  deletedAt       DateTime?
+  task            Task              @relation(fields: [taskId], references: [id], onDelete: Restrict)
+
+  @@index([userId, taskId])
+  @@index([userId, updatedAt])
+  @@index([userId, deletedAt])
+  @@map("work_sessions")
+}
+
+model UserPreference {
+  id                 String   @id
+  userId             String   @unique
+  theme              String
+  language           String
+  urgencyWindowDays  Int
+  linkedAuthUserId   String?
+  linkedAuthProvider String?
+  lastSyncAt         DateTime?
+  createdAt          DateTime
+  updatedAt          DateTime
+  deletedAt          DateTime?
+
+  @@index([userId, updatedAt])
+  @@map("user_preferences")
+}

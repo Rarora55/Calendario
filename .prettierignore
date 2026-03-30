@@ -1,0 +1,13 @@
+node_modules/
+backend/node_modules/
+.expo/
+dist/
+build/
+coverage/
+playwright-report/
+test-results/
+android/
+ios/
+package-lock.json
+backend/package-lock.json
+prisma/migrations/

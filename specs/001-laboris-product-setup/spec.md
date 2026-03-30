@@ -152,8 +152,14 @@ visual and account preferences.
   show the current account state without blocking app usage while signed out.
 - **FR-014**: The system MUST preserve user-created work data and preferences
   across app restarts.
-- **FR-015**: The product MUST provide a modern interface with selectable
-  light and dark presentation using soft pastel colors.
+- **FR-015**: The product MUST provide selectable light and dark themes through
+  shared design tokens, with both themes applied consistently across GENERAL,
+  CALENDAR, PRIORITY, TIMER, REPORTS, and SETTINGS.
+- **FR-015a**: Interactive controls MUST maintain accessible touch targets and
+  readable visual contrast on supported mobile and web surfaces.
+- **FR-015b**: Layouts for the six primary views MUST remain legible and usable
+  on supported phone widths and Expo web without horizontal overflow during
+  standard task-management flows.
 - **FR-016**: If a user signs in with Google after already using the app
   locally, the existing local data MUST become the baseline dataset associated
   with that signed-in account for subsequent synchronization.

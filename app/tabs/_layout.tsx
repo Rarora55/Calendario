@@ -1,22 +1,20 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { router, Tabs } from "expo-router";
 import React from "react";
-import { Alert, Pressable } from "react-native";
+import { Pressable } from "react-native";
 
 import { useClientOnlyValue } from "@/components/useClientOnlyValue";
-import { useColorScheme } from "@/components/useColorScheme";
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>["name"];
   color: string;
 }) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+  return <FontAwesome size={24} style={{ marginBottom: -3 }} {...props} />;
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
   const inactiveIconColor = "#8A8F98";
-  const activeIconColor = "#FFFFFF";
+  const activeIconColor = "#35291F";
 
   return (
     <Tabs
@@ -25,9 +23,14 @@ export default function TabLayout() {
         tabBarInactiveTintColor: inactiveIconColor,
         headerShown: useClientOnlyValue(false, true),
         animation: "fade",
+        headerStyle: {
+          backgroundColor: "#FFF9F2",
+        },
+        headerTintColor: "#35291F",
         tabBarStyle: {
-          backgroundColor: colorScheme === "dark" ? "#111111" : "#1B1D22",
-          borderTopColor: "transparent",
+          backgroundColor: "#F4EDE4",
+          borderTopColor: "#DFD2C4",
+          height: 72,
         },
       }}
     >
@@ -35,27 +38,9 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "General",
-          tabBarIcon: ({ color }) => <TabBarIcon name="calendar" color={color} />,
+          tabBarIcon: ({ color }) => <TabBarIcon name="th-large" color={color} />,
           headerRight: () => (
-            <Pressable
-              style={{ paddingHorizontal: 12 }}
-              onPress={() =>
-                Alert.alert("Crear", "Selecciona el tipo:", [
-                  {
-                    text: "Crear grupo",
-                    onPress: () => router.push("/group-editor" as never),
-                  },
-                  {
-                    text: "Crear evento",
-                    onPress: () => router.push("/event-editor" as never),
-                  },
-                  {
-                    text: "Cancelar",
-                    style: "cancel",
-                  },
-                ])
-              }
-            >
+            <Pressable style={{ paddingHorizontal: 12 }} onPress={() => router.push("/task-group-editor" as never)}>
               {({ pressed }) => (
                 <FontAwesome
                   name="plus"
@@ -71,22 +56,29 @@ export default function TabLayout() {
       <Tabs.Screen
         name="calendars"
         options={{
-          title: "Calendario",
+          title: "Calendar",
           tabBarIcon: ({ color }) => <TabBarIcon name="calendar-o" color={color} />,
         }}
       />
       <Tabs.Screen
         name="priorities"
         options={{
-          title: "Prioridades",
-          tabBarIcon: ({ color }) => <TabBarIcon name="circle" color={color} />,
+          title: "Priority",
+          tabBarIcon: ({ color }) => <TabBarIcon name="warning" color={color} />,
         }}
       />
       <Tabs.Screen
-        name="bin"
+        name="timer"
         options={{
-          title: "Bin",
-          tabBarIcon: ({ color }) => <TabBarIcon name="trash" color={color} />,
+          title: "Timer",
+          tabBarIcon: ({ color }) => <TabBarIcon name="clock-o" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="reports"
+        options={{
+          title: "Reports",
+          tabBarIcon: ({ color }) => <TabBarIcon name="pie-chart" color={color} />,
         }}
       />
       <Tabs.Screen

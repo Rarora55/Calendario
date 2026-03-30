@@ -1,42 +1,40 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
-import 'react-native-reanimated';
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { ThemeProvider } from "@react-navigation/native";
+import { useFonts } from "expo-font";
+import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { useEffect, useMemo, useState } from "react";
+import "react-native-reanimated";
 
-import { useColorScheme } from '@/components/useColorScheme';
-import AppLaunchScreen from '@/src/components/AppLaunchScreen';
+import AppLaunchScreen from "@/src/components/AppLaunchScreen";
+import { createNavigationTheme } from "@/src/theme/themes";
 
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary
-} from 'expo-router';
+export { ErrorBoundary } from "expo-router";
 
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: 'tabs',
+  initialRouteName: "tabs",
 };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 const APP_LAUNCH_SCREEN_MS = 1600;
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     ...FontAwesome.font,
   });
   const [showLaunchScreen, setShowLaunchScreen] = useState(true);
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
   }, [error]);
 
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded) {
+      return;
+    }
 
     void SplashScreen.hideAsync();
     const timeoutId = setTimeout(() => {
@@ -58,21 +56,23 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  const [mode] = useState<"light" | "dark">("light");
+  const navigationTheme = useMemo(() => createNavigationTheme(mode), [mode]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={navigationTheme}>
       <Stack>
         <Stack.Screen name="tabs" options={{ headerShown: false }} />
-        <Stack.Screen name='day' options={{ title: "Día" }} />
         <Stack.Screen
-          name="event-editor"
-          options={{ title: "Crear Evento", presentation: "modal" }}
+          name="task-group-editor"
+          options={{ title: "Task Group", presentation: "modal" }}
         />
         <Stack.Screen
-          name="group-editor"
-          options={{ title: "Crear Grupo", presentation: "modal" }}
+          name="task-editor"
+          options={{ title: "Task", presentation: "modal" }}
         />
+        <Stack.Screen name="group-editor" options={{ title: "Task Group" }} />
+        <Stack.Screen name="event-editor" options={{ title: "Task" }} />
       </Stack>
     </ThemeProvider>
   );
