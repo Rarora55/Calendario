@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
+import { useAppTranslation } from "@/src/i18n/useAppTranslation";
 import { useAppStore } from "@/src/state/store";
 import { useAppTheme } from "@/src/theme/useAppTheme";
 
@@ -15,6 +16,7 @@ export default function TaskGroupEditorScreen() {
   const createTaskGroup = useAppStore((state) => state.createTaskGroup);
   const updateTaskGroup = useAppStore((state) => state.updateTaskGroup);
   const { colors } = useAppTheme();
+  const { copy } = useAppTranslation();
 
   const existingGroup = useMemo(() => taskGroups.find((group) => group.id === id), [id, taskGroups]);
   const [name, setName] = useState("");
@@ -48,15 +50,15 @@ export default function TaskGroupEditorScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: 18, gap: 18 }}>
       <Text style={{ fontSize: 28, fontWeight: "800", color: colors.text }}>
-        {existingGroup ? "Edit Task Group" : "Create Task Group"}
+        {existingGroup ? copy.taskGroupEditor.editTitle : copy.taskGroupEditor.createTitle}
       </Text>
 
       <View style={{ gap: 10 }}>
-        <Text style={{ color: colors.text, fontWeight: "700" }}>Name</Text>
+        <Text style={{ color: colors.text, fontWeight: "700" }}>{copy.taskGroupEditor.name}</Text>
         <TextInput
           value={name}
           onChangeText={setName}
-          placeholder="Client work, School, Personal..."
+          placeholder={copy.taskGroupEditor.namePlaceholder}
           placeholderTextColor={colors.textMuted}
           style={{
             borderWidth: 1,
@@ -71,7 +73,7 @@ export default function TaskGroupEditorScreen() {
       </View>
 
       <View style={{ gap: 10 }}>
-        <Text style={{ color: colors.text, fontWeight: "700" }}>Color</Text>
+        <Text style={{ color: colors.text, fontWeight: "700" }}>{copy.taskGroupEditor.color}</Text>
         <View style={{ flexDirection: "row", gap: 12, flexWrap: "wrap" }}>
           {colorOptions.map((candidate) => (
             <Pressable
@@ -100,7 +102,7 @@ export default function TaskGroupEditorScreen() {
           alignItems: "center",
         }}
       >
-        <Text style={{ color: colors.background, fontWeight: "700", fontSize: 16 }}>Save Group</Text>
+        <Text style={{ color: colors.background, fontWeight: "700", fontSize: 16 }}>{copy.taskGroupEditor.saveGroup}</Text>
       </Pressable>
     </View>
   );

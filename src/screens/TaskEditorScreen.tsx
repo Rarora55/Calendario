@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
+import { useAppTranslation } from "@/src/i18n/useAppTranslation";
 import { useAppStore } from "@/src/state/store";
 import { useAppTheme } from "@/src/theme/useAppTheme";
 
@@ -14,6 +15,7 @@ export default function TaskEditorScreen() {
   const createTask = useAppStore((state) => state.createTask);
   const updateTask = useAppStore((state) => state.updateTask);
   const { colors } = useAppTheme();
+  const { copy } = useAppTranslation();
 
   const inputStyle = {
     borderWidth: 1,
@@ -83,11 +85,11 @@ export default function TaskEditorScreen() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 18, gap: 18 }}>
       <Text style={{ fontSize: 28, fontWeight: "800", color: colors.text }}>
-        {existingTask ? "Edit Task" : "Create Task"}
+        {existingTask ? copy.taskEditor.editTitle : copy.taskEditor.createTitle}
       </Text>
 
       <View style={{ gap: 10 }}>
-        <Text style={{ color: colors.text, fontWeight: "700" }}>Task Group</Text>
+        <Text style={{ color: colors.text, fontWeight: "700" }}>{copy.taskEditor.group}</Text>
         <View style={{ gap: 10 }}>
           {taskGroups.map((group) => (
             <Pressable
@@ -108,34 +110,34 @@ export default function TaskEditorScreen() {
       </View>
 
       <View style={{ gap: 10 }}>
-        <Text style={{ color: colors.text, fontWeight: "700" }}>Title</Text>
-        <TextInput value={title} onChangeText={setTitle} style={inputStyle} placeholder="Prepare sprint summary" placeholderTextColor={colors.textMuted} />
+        <Text style={{ color: colors.text, fontWeight: "700" }}>{copy.taskEditor.title}</Text>
+        <TextInput value={title} onChangeText={setTitle} style={inputStyle} placeholder={copy.taskEditor.titlePlaceholder} placeholderTextColor={colors.textMuted} />
       </View>
 
       <View style={{ gap: 10 }}>
-        <Text style={{ color: colors.text, fontWeight: "700" }}>Notes</Text>
-        <TextInput value={notes} onChangeText={setNotes} multiline style={[inputStyle, { minHeight: 120, textAlignVertical: "top" }]} placeholder="Optional context" placeholderTextColor={colors.textMuted} />
+        <Text style={{ color: colors.text, fontWeight: "700" }}>{copy.taskEditor.notes}</Text>
+        <TextInput value={notes} onChangeText={setNotes} multiline style={[inputStyle, { minHeight: 120, textAlignVertical: "top" }]} placeholder={copy.taskEditor.notesPlaceholder} placeholderTextColor={colors.textMuted} />
       </View>
 
       <View style={{ flexDirection: "row", gap: 12 }}>
         <View style={{ flex: 1, gap: 10 }}>
-          <Text style={{ color: colors.text, fontWeight: "700" }}>Value</Text>
+          <Text style={{ color: colors.text, fontWeight: "700" }}>{copy.taskEditor.value}</Text>
           <TextInput value={value} onChangeText={setValue} keyboardType="numeric" style={inputStyle} />
         </View>
         <View style={{ flex: 1, gap: 10 }}>
-          <Text style={{ color: colors.text, fontWeight: "700" }}>Est. Minutes</Text>
+          <Text style={{ color: colors.text, fontWeight: "700" }}>{copy.taskEditor.estimatedMinutes}</Text>
           <TextInput value={estimatedMinutes} onChangeText={setEstimatedMinutes} keyboardType="numeric" style={inputStyle} />
         </View>
       </View>
 
       <View style={{ flexDirection: "row", gap: 12 }}>
         <View style={{ flex: 1, gap: 10 }}>
-          <Text style={{ color: colors.text, fontWeight: "700" }}>Start Date</Text>
-          <TextInput value={scheduledStartDate} onChangeText={setScheduledStartDate} style={inputStyle} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
+          <Text style={{ color: colors.text, fontWeight: "700" }}>{copy.taskEditor.startDate}</Text>
+          <TextInput value={scheduledStartDate} onChangeText={setScheduledStartDate} style={inputStyle} placeholder={copy.taskEditor.datePlaceholder} placeholderTextColor={colors.textMuted} />
         </View>
         <View style={{ flex: 1, gap: 10 }}>
-          <Text style={{ color: colors.text, fontWeight: "700" }}>End Date</Text>
-          <TextInput value={scheduledEndDate} onChangeText={setScheduledEndDate} style={inputStyle} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
+          <Text style={{ color: colors.text, fontWeight: "700" }}>{copy.taskEditor.endDate}</Text>
+          <TextInput value={scheduledEndDate} onChangeText={setScheduledEndDate} style={inputStyle} placeholder={copy.taskEditor.datePlaceholder} placeholderTextColor={colors.textMuted} />
         </View>
       </View>
 
@@ -149,7 +151,7 @@ export default function TaskEditorScreen() {
         }}
       >
         <Text style={{ color: isPriority ? colors.background : colors.text, fontWeight: "700" }}>
-          {isPriority ? "Priority Enabled" : "Mark as Priority"}
+          {isPriority ? copy.taskEditor.priorityEnabled : copy.taskEditor.markPriority}
         </Text>
       </Pressable>
 
@@ -162,7 +164,7 @@ export default function TaskEditorScreen() {
           alignItems: "center",
         }}
       >
-        <Text style={{ color: "#ffffff", fontWeight: "700", fontSize: 16 }}>Save Task</Text>
+        <Text style={{ color: "#ffffff", fontWeight: "700", fontSize: 16 }}>{copy.taskEditor.saveTask}</Text>
       </Pressable>
     </ScrollView>
   );

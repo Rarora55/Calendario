@@ -3,6 +3,7 @@ import { Pressable, Text, View } from "react-native";
 
 import type { TaskRecord } from "@/src/features/shared/types";
 import { deriveTaskReportState } from "@/src/features/tasks/status";
+import { useAppTranslation } from "@/src/i18n/useAppTranslation";
 import { useAppTheme } from "@/src/theme/useAppTheme";
 
 type TaskRowProps = {
@@ -23,9 +24,10 @@ function formatDuration(seconds: number) {
 }
 
 export function TaskRow({ task, onEdit, onToggleComplete, onDelete }: TaskRowProps) {
+  const { copy } = useAppTranslation();
   const state = deriveTaskReportState(task);
   const badgeLabel =
-    state === "completed" ? "Completed" : state === "in-progress" ? "In Progress" : "Planned";
+    state === "completed" ? copy.taskRow.completed : state === "in-progress" ? copy.taskRow.inProgress : copy.taskRow.planned;
   const { colors, mode } = useAppTheme();
   const badgeBackgroundColor =
     state === "completed" ? colors.success : state === "in-progress" ? colors.warning : colors.surfaceMuted;
@@ -61,7 +63,7 @@ export function TaskRow({ task, onEdit, onToggleComplete, onDelete }: TaskRowPro
           </View>
           {onDelete ? (
             <Pressable
-              accessibilityLabel={`Delete ${task.title}`}
+              accessibilityLabel={copy.taskRow.deleteTaskA11y(task.title)}
               onPress={onDelete}
               style={{
                 width: 32,
@@ -80,15 +82,15 @@ export function TaskRow({ task, onEdit, onToggleComplete, onDelete }: TaskRowPro
       </View>
 
       <Text style={{ color: colors.textMuted }}>
-        Value {task.value} - Estimated {formatDuration(task.estimatedTimeSeconds)} - Worked {formatDuration(task.workedTimeSeconds)}
+        {copy.taskRow.summary(task.value, formatDuration(task.estimatedTimeSeconds), formatDuration(task.workedTimeSeconds))}
       </Text>
 
       {task.scheduledStartDate && task.scheduledEndDate ? (
         <Text style={{ color: colors.textMuted }}>
-          Scheduled {task.scheduledStartDate} to {task.scheduledEndDate}
+          {copy.taskRow.scheduled(task.scheduledStartDate, task.scheduledEndDate)}
         </Text>
       ) : (
-        <Text style={{ color: colors.textMuted }}>Unscheduled</Text>
+        <Text style={{ color: colors.textMuted }}>{copy.common.unscheduled}</Text>
       )}
 
       <View style={{ flexDirection: "row", gap: 10 }}>
@@ -104,7 +106,7 @@ export function TaskRow({ task, onEdit, onToggleComplete, onDelete }: TaskRowPro
               alignItems: "center",
             }}
           >
-            <Text style={{ color: colors.text, fontWeight: "600" }}>Edit</Text>
+            <Text style={{ color: colors.text, fontWeight: "600" }}>{copy.taskRow.edit}</Text>
           </Pressable>
         ) : null}
         <Pressable
@@ -118,7 +120,7 @@ export function TaskRow({ task, onEdit, onToggleComplete, onDelete }: TaskRowPro
           }}
         >
           <Text style={{ color: "#ffffff", fontWeight: "700" }}>
-            {task.isCompleted ? "Reopen" : "Complete"}
+            {task.isCompleted ? copy.taskRow.reopen : copy.taskRow.complete}
           </Text>
         </Pressable>
       </View>

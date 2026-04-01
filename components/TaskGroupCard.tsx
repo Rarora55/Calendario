@@ -2,6 +2,7 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Pressable, Text, View } from "react-native";
 
 import { TaskRow } from "@/components/TaskRow";
+import { useAppTranslation } from "@/src/i18n/useAppTranslation";
 import type { TaskGroupSummary, TaskRecord } from "@/src/features/shared/types";
 import { useAppTheme } from "@/src/theme/useAppTheme";
 
@@ -37,6 +38,7 @@ export function TaskGroupCard({
   onDeleteTask,
 }: TaskGroupCardProps) {
   const { colors } = useAppTheme();
+  const { copy } = useAppTranslation();
 
   return (
     <View
@@ -63,18 +65,18 @@ export function TaskGroupCard({
             <Text style={{ fontSize: 22, fontWeight: "700", color: colors.text }}>{summary.name}</Text>
           </View>
           <Text style={{ color: colors.textMuted }}>
-            {summary.taskCount} tasks - Value {summary.totalValue} - Estimated {formatDuration(summary.totalEstimatedTimeSeconds)}
+            {copy.taskGroupCard.summary(summary.taskCount, summary.totalValue, formatDuration(summary.totalEstimatedTimeSeconds))}
           </Text>
           {summary.dateSpanStart && summary.dateSpanEnd ? (
             <Text style={{ color: colors.textMuted }}>
-              Span {summary.dateSpanStart} to {summary.dateSpanEnd}
+              {copy.taskGroupCard.span(summary.dateSpanStart, summary.dateSpanEnd)}
             </Text>
           ) : null}
         </View>
 
         <View style={{ flexDirection: "row", gap: 10, alignSelf: "flex-start" }}>
           <Pressable
-            accessibilityLabel={`Delete group ${summary.name}`}
+            accessibilityLabel={copy.taskGroupCard.deleteGroupA11y(summary.name)}
             onPress={onDeleteGroup}
             style={{
               width: 36,
@@ -99,7 +101,7 @@ export function TaskGroupCard({
               alignSelf: "flex-start",
             }}
           >
-            <Text style={{ color: colors.text, fontWeight: "600" }}>Edit Group</Text>
+            <Text style={{ color: colors.text, fontWeight: "600" }}>{copy.taskGroupCard.editGroup}</Text>
           </Pressable>
         </View>
       </View>
@@ -113,11 +115,13 @@ export function TaskGroupCard({
         }}
       >
         <Text style={{ color: colors.text, fontWeight: "600" }}>
-          Completed {summary.progressStateSummary.completed} - In Progress {summary.progressStateSummary.inProgress} - Planned {summary.progressStateSummary.notCompleted}
+          {copy.taskGroupCard.progress(
+            summary.progressStateSummary.completed,
+            summary.progressStateSummary.inProgress,
+            summary.progressStateSummary.notCompleted,
+          )}
         </Text>
-        <Text style={{ color: colors.textMuted }}>
-          Worked {formatDuration(summary.totalWorkedTimeSeconds)}
-        </Text>
+        <Text style={{ color: colors.textMuted }}>{copy.taskGroupCard.worked(formatDuration(summary.totalWorkedTimeSeconds))}</Text>
       </View>
 
       <Pressable
@@ -129,7 +133,7 @@ export function TaskGroupCard({
           alignItems: "center",
         }}
       >
-        <Text style={{ color: colors.background, fontWeight: "700" }}>Add Task</Text>
+        <Text style={{ color: colors.background, fontWeight: "700" }}>{copy.taskGroupCard.addTask}</Text>
       </Pressable>
 
       <View style={{ gap: 10 }}>
@@ -144,7 +148,7 @@ export function TaskGroupCard({
             />
           ))
         ) : (
-          <Text style={{ color: colors.textMuted }}>No tasks in this group yet.</Text>
+          <Text style={{ color: colors.textMuted }}>{copy.taskGroupCard.empty}</Text>
         )}
       </View>
     </View>

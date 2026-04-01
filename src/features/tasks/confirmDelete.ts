@@ -4,12 +4,14 @@ type ConfirmDeleteOptions = {
   title: string;
   message: string;
   confirmLabel?: string;
+  cancelLabel?: string;
 };
 
 export async function confirmDeleteAction({
   title,
   message,
   confirmLabel = "Delete",
+  cancelLabel = "Cancel",
 }: ConfirmDeleteOptions) {
   if (Platform.OS === "web" && typeof window !== "undefined" && typeof window.confirm === "function") {
     return window.confirm(`${title}\n\n${message}`);
@@ -32,7 +34,7 @@ export async function confirmDeleteAction({
       message,
       [
         {
-          text: "Cancel",
+          text: cancelLabel,
           style: "cancel",
           onPress: () => resolveOnce(false),
         },

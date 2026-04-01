@@ -5,6 +5,7 @@ import { TaskRow } from "@/components/TaskRow";
 import { selectPriorityTasks } from "@/src/features/priority/selectors";
 import { confirmDeleteAction } from "@/src/features/tasks/confirmDelete";
 import { useTabSwipeNavigation } from "@/src/hooks/useTabSwipeNavigation";
+import { useAppTranslation } from "@/src/i18n/useAppTranslation";
 import { useAppStore } from "@/src/state/store";
 import { useAppTheme } from "@/src/theme/useAppTheme";
 
@@ -16,6 +17,7 @@ export default function PrioritiesScreen() {
   const toggleTaskCompletion = useAppStore((state) => state.toggleTaskCompletion);
   const deleteTask = useAppStore((state) => state.deleteTask);
   const { colors } = useAppTheme();
+  const { copy } = useAppTranslation();
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const panHandlers = useTabSwipeNavigation();
 
@@ -29,8 +31,10 @@ export default function PrioritiesScreen() {
 
   const handleDeleteTask = async (taskId: string, title: string) => {
     const confirmed = await confirmDeleteAction({
-      title: "Delete task?",
-      message: `Remove "${title}" from active views?`,
+      title: copy.deleteDialogs.taskTitle,
+      message: copy.deleteDialogs.taskMessage(title),
+      confirmLabel: copy.common.delete,
+      cancelLabel: copy.common.cancel,
     });
 
     if (!confirmed) {
@@ -38,7 +42,7 @@ export default function PrioritiesScreen() {
     }
 
     const result = await deleteTask(taskId);
-    setFeedbackMessage(result.ok ? null : "Stop the active timer before deleting this task.");
+    setFeedbackMessage(result.ok ? null : copy.priority.deleteTaskBlocked);
   };
 
   return (
@@ -48,10 +52,8 @@ export default function PrioritiesScreen() {
       contentContainerStyle={{ padding: 18, gap: 14 }}
     >
       <View style={{ gap: 8 }}>
-        <Text style={{ fontSize: 28, fontWeight: "800", color: colors.text }}>Priority</Text>
-        <Text style={{ color: colors.textMuted }}>
-          Tasks shown here are overdue, within the urgency window, or explicitly marked as priority.
-        </Text>
+        <Text style={{ fontSize: 28, fontWeight: "800", color: colors.text }}>{copy.priority.title}</Text>
+        <Text style={{ color: colors.textMuted }}>{copy.priority.description}</Text>
         {feedbackMessage ? <Text style={{ color: colors.warning, fontWeight: "600" }}>{feedbackMessage}</Text> : null}
       </View>
 
@@ -67,10 +69,8 @@ export default function PrioritiesScreen() {
         ))
       ) : (
         <View style={{ padding: 20, borderRadius: 24, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }}>
-          <Text style={{ color: colors.text, fontWeight: "700", marginBottom: 6 }}>Nothing urgent right now</Text>
-          <Text style={{ color: colors.textMuted }}>
-            This view will populate as tasks become urgent or marked as high-priority work.
-          </Text>
+          <Text style={{ color: colors.text, fontWeight: "700", marginBottom: 6 }}>{copy.priority.emptyTitle}</Text>
+          <Text style={{ color: colors.textMuted }}>{copy.priority.emptyDescription}</Text>
         </View>
       )}
     </ScrollView>

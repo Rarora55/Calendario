@@ -5,6 +5,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { TaskGroupCard } from "@/components/TaskGroupCard";
 import { useTabSwipeNavigation } from "@/src/hooks/useTabSwipeNavigation";
 import { confirmDeleteAction } from "@/src/features/tasks/confirmDelete";
+import { useAppTranslation } from "@/src/i18n/useAppTranslation";
 import { useAppStore } from "@/src/state/store";
 import { useAppTheme } from "@/src/theme/useAppTheme";
 
@@ -17,6 +18,7 @@ export default function GeneralScreen() {
   const deleteTask = useAppStore((state) => state.deleteTask);
   const deleteTaskGroup = useAppStore((state) => state.deleteTaskGroup);
   const { colors } = useAppTheme();
+  const { copy } = useAppTranslation();
   const panHandlers = useTabSwipeNavigation();
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
@@ -28,8 +30,10 @@ export default function GeneralScreen() {
 
   const handleDeleteTask = async (taskId: string, title: string) => {
     const confirmed = await confirmDeleteAction({
-      title: "Delete task?",
-      message: `Remove "${title}" from active views?`,
+      title: copy.deleteDialogs.taskTitle,
+      message: copy.deleteDialogs.taskMessage(title),
+      confirmLabel: copy.common.delete,
+      cancelLabel: copy.common.cancel,
     });
 
     if (!confirmed) {
@@ -38,14 +42,16 @@ export default function GeneralScreen() {
 
     const result = await deleteTask(taskId);
     setFeedbackMessage(
-      result.ok ? null : "Stop the active timer before deleting this task.",
+      result.ok ? null : copy.general.deleteTaskBlocked,
     );
   };
 
   const handleDeleteTaskGroup = async (taskGroupId: string, name: string) => {
     const confirmed = await confirmDeleteAction({
-      title: "Delete task group?",
-      message: `Remove "${name}" and all tasks inside it from active views?`,
+      title: copy.deleteDialogs.groupTitle,
+      message: copy.deleteDialogs.groupMessage(name),
+      confirmLabel: copy.common.delete,
+      cancelLabel: copy.common.cancel,
     });
 
     if (!confirmed) {
@@ -54,17 +60,15 @@ export default function GeneralScreen() {
 
     const result = await deleteTaskGroup(taskGroupId);
     setFeedbackMessage(
-      result.ok ? null : "Stop the active timer before deleting this task group.",
+      result.ok ? null : copy.general.deleteGroupBlocked,
     );
   };
 
   return (
     <View {...panHandlers} style={{ flex: 1, backgroundColor: colors.background, padding: 18 }}>
       <View style={{ gap: 10, marginBottom: 16 }}>
-        <Text style={{ fontSize: 30, fontWeight: "800", color: colors.text }}>General</Text>
-        <Text style={{ color: colors.textMuted, fontSize: 15 }}>
-          Organize work by group, keep planned value visible, and jump straight into creation.
-        </Text>
+        <Text style={{ fontSize: 30, fontWeight: "800", color: colors.text }}>{copy.general.title}</Text>
+        <Text style={{ color: colors.textMuted, fontSize: 15 }}>{copy.general.description}</Text>
         {feedbackMessage ? <Text style={{ color: colors.warning, fontWeight: "600" }}>{feedbackMessage}</Text> : null}
       </View>
 
@@ -78,7 +82,7 @@ export default function GeneralScreen() {
           marginBottom: 16,
         }}
       >
-        <Text style={{ color: "#ffffff", fontWeight: "700", fontSize: 16 }}>Create Task Group</Text>
+        <Text style={{ color: "#ffffff", fontWeight: "700", fontSize: 16 }}>{copy.general.createTaskGroup}</Text>
       </Pressable>
 
       <ScrollView contentContainerStyle={{ gap: 14, paddingBottom: 24 }}>
@@ -114,11 +118,9 @@ export default function GeneralScreen() {
             }}
           >
             <Text style={{ fontSize: 20, fontWeight: "700", color: colors.text, marginBottom: 8 }}>
-              No task groups yet
+              {copy.general.emptyTitle}
             </Text>
-            <Text style={{ color: colors.textMuted }}>
-              The repository is now on the task-first architecture. Create a group to start the MVP flow.
-            </Text>
+            <Text style={{ color: colors.textMuted }}>{copy.general.emptyDescription}</Text>
           </View>
         )}
       </ScrollView>

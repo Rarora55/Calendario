@@ -2,8 +2,10 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { router, Tabs } from "expo-router";
 import React from "react";
 import { Pressable } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useClientOnlyValue } from "@/components/useClientOnlyValue";
+import { useAppTranslation } from "@/src/i18n/useAppTranslation";
 import { useAppTheme } from "@/src/theme/useAppTheme";
 
 function TabBarIcon(props: {
@@ -15,6 +17,8 @@ function TabBarIcon(props: {
 
 export default function TabLayout() {
   const { colors } = useAppTheme();
+  const { copy } = useAppTranslation();
+  const insets = useSafeAreaInsets();
   const inactiveIconColor = colors.textMuted;
   const activeIconColor = colors.text;
 
@@ -32,14 +36,24 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: colors.surfaceMuted,
           borderTopColor: colors.border,
-          height: 72,
+          height: 82 + insets.bottom,
+          paddingTop: 8,
+          paddingBottom: Math.max(insets.bottom, 12),
+        },
+        tabBarItemStyle: {
+          paddingVertical: 6,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: "600",
+          marginTop: 2,
         },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "General",
+          title: copy.tabs.general,
           tabBarIcon: ({ color }) => <TabBarIcon name="th-large" color={color} />,
           headerRight: () => (
             <Pressable style={{ paddingHorizontal: 12 }} onPress={() => router.push("/task-group-editor" as never)}>
@@ -58,35 +72,35 @@ export default function TabLayout() {
       <Tabs.Screen
         name="calendars"
         options={{
-          title: "Calendar",
+          title: copy.tabs.calendar,
           tabBarIcon: ({ color }) => <TabBarIcon name="calendar-o" color={color} />,
         }}
       />
       <Tabs.Screen
         name="priorities"
         options={{
-          title: "Priority",
+          title: copy.tabs.priority,
           tabBarIcon: ({ color }) => <TabBarIcon name="warning" color={color} />,
         }}
       />
       <Tabs.Screen
         name="timer"
         options={{
-          title: "Timer",
+          title: copy.tabs.timer,
           tabBarIcon: ({ color }) => <TabBarIcon name="clock-o" color={color} />,
         }}
       />
       <Tabs.Screen
         name="reports"
         options={{
-          title: "Reports",
+          title: copy.tabs.reports,
           tabBarIcon: ({ color }) => <TabBarIcon name="pie-chart" color={color} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Settings",
+          title: copy.tabs.settings,
           tabBarIcon: ({ color }) => <TabBarIcon name="cog" color={color} />,
         }}
       />

@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import "react-native-reanimated";
 
 import AppLaunchScreen from "@/src/components/AppLaunchScreen";
+import { useAppTranslation } from "@/src/i18n/useAppTranslation";
 import { useAppStore } from "@/src/state/store";
 import { createNavigationTheme } from "@/src/theme/themes";
 import { useAppTheme } from "@/src/theme/useAppTheme";
@@ -70,6 +71,7 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const { mode } = useAppTheme();
+  const { copy } = useAppTranslation();
   const navigationTheme = useMemo(() => createNavigationTheme(mode), [mode]);
 
   return (
@@ -79,14 +81,14 @@ function RootLayoutNav() {
         <Stack.Screen name="tabs" options={{ headerShown: false }} />
         <Stack.Screen
           name="task-group-editor"
-          options={{ title: "Task Group", presentation: "modal" }}
+          options={{ title: copy.stack.taskGroup, presentation: "modal" }}
         />
         <Stack.Screen
           name="task-editor"
-          options={{ title: "Task", presentation: "modal" }}
+          options={{ title: copy.stack.task, presentation: "modal" }}
         />
-        <Stack.Screen name="group-editor" options={{ title: "Task Group" }} />
-        <Stack.Screen name="event-editor" options={{ title: "Task" }} />
+        <Stack.Screen name="group-editor" options={{ title: copy.stack.taskGroup }} />
+        <Stack.Screen name="event-editor" options={{ title: copy.stack.task }} />
       </Stack>
     </ThemeProvider>
   );

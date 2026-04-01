@@ -3,6 +3,7 @@ import { Text, View } from "react-native";
 
 import { buildWeeklyReport } from "@/src/features/reports/weeklyReport";
 import { useTabSwipeNavigation } from "@/src/hooks/useTabSwipeNavigation";
+import { useAppTranslation } from "@/src/i18n/useAppTranslation";
 import { useAppStore } from "@/src/state/store";
 import { useAppTheme } from "@/src/theme/useAppTheme";
 
@@ -12,6 +13,7 @@ export default function ReportsScreen() {
   const tasks = useAppStore((state) => state.tasks);
   const workSessions = useAppStore((state) => state.workSessions);
   const { colors } = useAppTheme();
+  const { copy } = useAppTranslation();
   const panHandlers = useTabSwipeNavigation();
 
   useEffect(() => {
@@ -25,21 +27,19 @@ export default function ReportsScreen() {
   return (
     <View {...panHandlers} style={{ flex: 1, backgroundColor: colors.background, padding: 18, gap: 14 }}>
       <View style={{ gap: 8 }}>
-        <Text style={{ fontSize: 28, fontWeight: "800", color: colors.text }}>Reports</Text>
-        <Text style={{ color: colors.textMuted }}>
-          Weekly reporting is calculated locally from tasks and work sessions.
-        </Text>
+        <Text style={{ fontSize: 28, fontWeight: "800", color: colors.text }}>{copy.reports.title}</Text>
+        <Text style={{ color: colors.textMuted }}>{copy.reports.description}</Text>
       </View>
 
       <View style={{ backgroundColor: colors.card, borderRadius: 24, padding: 18, borderWidth: 1, borderColor: colors.border, gap: 8 }}>
         <Text style={{ color: colors.text, fontWeight: "700" }}>
-          Week {report.weekStartDate} to {report.weekEndDate}
+          {copy.reports.weekRange(report.weekStartDate, report.weekEndDate)}
         </Text>
-        <Text style={{ color: colors.textMuted }}>Completed {report.completedPercentage}%</Text>
-        <Text style={{ color: colors.textMuted }}>In Progress {report.inProgressPercentage}%</Text>
-        <Text style={{ color: colors.textMuted }}>Not Completed {report.notCompletedPercentage}%</Text>
-        <Text style={{ color: colors.textMuted }}>Completed Value {report.completedValueTotal}</Text>
-        <Text style={{ color: colors.textMuted }}>Time Invested {Math.round(report.timeInvestedSeconds / 60)} minutes</Text>
+        <Text style={{ color: colors.textMuted }}>{copy.reports.completed(report.completedPercentage)}</Text>
+        <Text style={{ color: colors.textMuted }}>{copy.reports.inProgress(report.inProgressPercentage)}</Text>
+        <Text style={{ color: colors.textMuted }}>{copy.reports.notCompleted(report.notCompletedPercentage)}</Text>
+        <Text style={{ color: colors.textMuted }}>{copy.reports.completedValue(report.completedValueTotal)}</Text>
+        <Text style={{ color: colors.textMuted }}>{copy.reports.timeInvested(Math.round(report.timeInvestedSeconds / 60))}</Text>
       </View>
     </View>
   );

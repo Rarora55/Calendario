@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Pressable, Text, View } from "react-native";
 
 import { useTabSwipeNavigation } from "@/src/hooks/useTabSwipeNavigation";
+import { useAppTranslation } from "@/src/i18n/useAppTranslation";
 import { useAppStore } from "@/src/state/store";
 import { useAppTheme } from "@/src/theme/useAppTheme";
 
@@ -11,6 +12,7 @@ export default function SettingsScreen() {
   const preferences = useAppStore((state) => state.preferences);
   const savePreferences = useAppStore((state) => state.savePreferences);
   const { colors } = useAppTheme();
+  const { copy } = useAppTranslation();
   const panHandlers = useTabSwipeNavigation();
 
   useEffect(() => {
@@ -22,14 +24,12 @@ export default function SettingsScreen() {
   return (
     <View {...panHandlers} style={{ flex: 1, backgroundColor: colors.background, padding: 18, gap: 18 }}>
       <View style={{ gap: 8 }}>
-        <Text style={{ fontSize: 28, fontWeight: "800", color: colors.text }}>Settings</Text>
-        <Text style={{ color: colors.textMuted }}>
-          Preference persistence is wired to SQLite now. Full auth and sync controls will layer on top of this.
-        </Text>
+        <Text style={{ fontSize: 28, fontWeight: "800", color: colors.text }}>{copy.settings.title}</Text>
+        <Text style={{ color: colors.textMuted }}>{copy.settings.description}</Text>
       </View>
 
       <View style={{ gap: 10, backgroundColor: colors.card, borderRadius: 24, padding: 18, borderWidth: 1, borderColor: colors.border }}>
-        <Text style={{ color: colors.text, fontWeight: "700" }}>Theme</Text>
+        <Text style={{ color: colors.text, fontWeight: "700" }}>{copy.settings.theme}</Text>
         <View style={{ flexDirection: "row", gap: 10 }}>
           {(["system", "light", "dark"] as const).map((theme) => (
             <Pressable
@@ -44,7 +44,7 @@ export default function SettingsScreen() {
               }}
             >
               <Text style={{ color: preferences?.theme === theme ? "#ffffff" : colors.text, fontWeight: "700" }}>
-                {theme}
+                {copy.settings.themeOptions[theme]}
               </Text>
             </Pressable>
           ))}
@@ -52,7 +52,7 @@ export default function SettingsScreen() {
       </View>
 
       <View style={{ gap: 10, backgroundColor: colors.card, borderRadius: 24, padding: 18, borderWidth: 1, borderColor: colors.border }}>
-        <Text style={{ color: colors.text, fontWeight: "700" }}>Language</Text>
+        <Text style={{ color: colors.text, fontWeight: "700" }}>{copy.settings.language}</Text>
         <View style={{ flexDirection: "row", gap: 10 }}>
           {(["en", "es"] as const).map((language) => (
             <Pressable
@@ -67,7 +67,7 @@ export default function SettingsScreen() {
               }}
             >
               <Text style={{ color: preferences?.language === language ? colors.background : colors.text, fontWeight: "700" }}>
-                {language.toUpperCase()}
+                {copy.settings.languageOptions[language]}
               </Text>
             </Pressable>
           ))}

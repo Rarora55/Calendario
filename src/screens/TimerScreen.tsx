@@ -4,6 +4,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { confirmDeleteAction } from "@/src/features/tasks/confirmDelete";
 import { useTabSwipeNavigation } from "@/src/hooks/useTabSwipeNavigation";
+import { useAppTranslation } from "@/src/i18n/useAppTranslation";
 import { useAppStore } from "@/src/state/store";
 import { useAppTheme } from "@/src/theme/useAppTheme";
 
@@ -18,6 +19,7 @@ export default function TimerScreen() {
   const stopTimer = useAppStore((state) => state.stopTimer);
   const deleteTask = useAppStore((state) => state.deleteTask);
   const { colors } = useAppTheme();
+  const { copy } = useAppTranslation();
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const panHandlers = useTabSwipeNavigation();
 
@@ -42,8 +44,8 @@ export default function TimerScreen() {
     if (!result.ok) {
       setFeedbackMessage(
         result.reason === "selection_required"
-          ? "Select a task before starting the timer."
-          : "Choose an available task before starting the timer.",
+          ? copy.timer.selectBeforeStart
+          : copy.timer.chooseAvailableBeforeStart,
       );
       return;
     }
@@ -53,8 +55,10 @@ export default function TimerScreen() {
 
   const handleDeleteTask = async (taskId: string, title: string) => {
     const confirmed = await confirmDeleteAction({
-      title: "Delete task?",
-      message: `Remove "${title}" from active views?`,
+      title: copy.deleteDialogs.taskTitle,
+      message: copy.deleteDialogs.taskMessage(title),
+      confirmLabel: copy.common.delete,
+      cancelLabel: copy.common.cancel,
     });
 
     if (!confirmed) {
@@ -62,7 +66,7 @@ export default function TimerScreen() {
     }
 
     const result = await deleteTask(taskId);
-    setFeedbackMessage(result.ok ? null : "Stop the active timer before deleting this task.");
+    setFeedbackMessage(result.ok ? null : copy.timer.deleteTaskBlocked);
   };
 
   return (
@@ -72,10 +76,8 @@ export default function TimerScreen() {
       contentContainerStyle={{ padding: 18, gap: 14 }}
     >
       <View style={{ gap: 8 }}>
-        <Text style={{ fontSize: 28, fontWeight: "800", color: colors.text }}>Timer</Text>
-        <Text style={{ color: colors.textMuted }}>
-          Select a task first, then start and stop the timer to write a session into the local database.
-        </Text>
+        <Text style={{ fontSize: 28, fontWeight: "800", color: colors.text }}>{copy.timer.title}</Text>
+        <Text style={{ color: colors.textMuted }}>{copy.timer.description}</Text>
         {feedbackMessage ? <Text style={{ color: colors.warning, fontWeight: "600" }}>{feedbackMessage}</Text> : null}
       </View>
 
@@ -84,19 +86,17 @@ export default function TimerScreen() {
             onPress={() => void stopTimer()}
             style={{ borderRadius: 18, backgroundColor: colors.text, paddingVertical: 16, alignItems: "center", gap: 4 }}
           >
-            <Text style={{ color: colors.background, fontWeight: "700" }}>Stop Active Timer</Text>
+            <Text style={{ color: colors.background, fontWeight: "700" }}>{copy.timer.stopActiveTimer}</Text>
             <Text style={{ color: "#ffffff", fontWeight: "700" }}>
-              Tracking {activeTask?.title ?? "selected task"}
+              {copy.timer.tracking(activeTask?.title ?? copy.timer.fallbackTrackedTask)}
             </Text>
           </Pressable>
       ) : (
         <View style={{ backgroundColor: colors.card, borderRadius: 20, padding: 16, borderWidth: 1, borderColor: colors.border, gap: 10 }}>
-          <Text style={{ color: colors.text, fontWeight: "700", fontSize: 18 }}>Selected Task</Text>
-          <Text style={{ color: colors.textMuted }}>
-            {selectedTask ? selectedTask.title : "Choose a task below before starting the timer."}
-          </Text>
+          <Text style={{ color: colors.text, fontWeight: "700", fontSize: 18 }}>{copy.timer.selectedTask}</Text>
+          <Text style={{ color: colors.textMuted }}>{selectedTask ? selectedTask.title : copy.timer.chooseTask}</Text>
           <Pressable
-            accessibilityLabel="Start selected timer"
+            accessibilityLabel={copy.timer.startTimer}
             onPress={handleStartTimer}
             style={{
               borderRadius: 12,
@@ -105,7 +105,7 @@ export default function TimerScreen() {
               alignItems: "center",
             }}
           >
-            <Text style={{ color: selectedTask ? "#ffffff" : colors.textMuted, fontWeight: "700" }}>Start Timer</Text>
+            <Text style={{ color: selectedTask ? "#ffffff" : colors.textMuted, fontWeight: "700" }}>{copy.timer.startTimer}</Text>
           </Pressable>
         </View>
       )}
@@ -130,13 +130,13 @@ export default function TimerScreen() {
               <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
                 <View style={{ flex: 1, gap: 6 }}>
                   <Text style={{ color: colors.text, fontWeight: "700", fontSize: 18 }}>{task.title}</Text>
-                  <Text style={{ color: colors.textMuted }}>Worked {Math.round(task.workedTimeSeconds / 60)} minutes</Text>
+                  <Text style={{ color: colors.textMuted }}>{copy.timer.workedMinutes(Math.round(task.workedTimeSeconds / 60))}</Text>
                   <Text style={{ color: colors.textMuted }}>
-                    {isActiveTask ? "Currently running" : isSelected ? "Selected for the next session" : "Available to track"}
+                    {isActiveTask ? copy.timer.currentlyRunning : isSelected ? copy.timer.selectedNextSession : copy.timer.availableToTrack}
                   </Text>
                 </View>
                 <Pressable
-                  accessibilityLabel={`Delete ${task.title}`}
+                  accessibilityLabel={copy.timer.deleteTaskA11y(task.title)}
                   onPress={() => void handleDeleteTask(task.id, task.title)}
                   style={{
                     width: 36,
@@ -153,7 +153,7 @@ export default function TimerScreen() {
                 </Pressable>
               </View>
               <Pressable
-                accessibilityLabel={`Select ${task.title}`}
+                accessibilityLabel={copy.timer.selectTaskA11y(task.title)}
                 disabled={Boolean(activeTimer)}
                 onPress={() => {
                   selectTimerTask(task.id);
@@ -170,7 +170,7 @@ export default function TimerScreen() {
                 }}
               >
                 <Text style={{ color: colors.text, fontWeight: "700" }}>
-                  {isActiveTask ? "Running" : isSelected ? "Selected" : "Select Task"}
+                  {isActiveTask ? copy.timer.running : isSelected ? copy.timer.selected : copy.timer.selectTask}
                 </Text>
               </Pressable>
             </View>
@@ -178,10 +178,8 @@ export default function TimerScreen() {
         })
       ) : (
         <View style={{ backgroundColor: colors.card, borderRadius: 20, padding: 16, borderWidth: 1, borderColor: colors.border, gap: 8 }}>
-          <Text style={{ color: colors.text, fontWeight: "700" }}>No active tasks yet</Text>
-          <Text style={{ color: colors.textMuted }}>
-            Create a task in GENERAL before starting the timer.
-          </Text>
+          <Text style={{ color: colors.text, fontWeight: "700" }}>{copy.timer.noActiveTasks}</Text>
+          <Text style={{ color: colors.textMuted }}>{copy.timer.noActiveTasksDescription}</Text>
         </View>
       )}
     </ScrollView>
